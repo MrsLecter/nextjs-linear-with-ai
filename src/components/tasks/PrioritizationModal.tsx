@@ -140,7 +140,7 @@ function SuccessState({
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
             Recommended next task
           </p>
-          <p className="text-sm text-slate-400">Task ID: {data.primaryTaskId}</p>
+          <p className="mb-4 text-sm text-slate-400">Task ID: {data.primaryTaskId}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 sm:p-5">
