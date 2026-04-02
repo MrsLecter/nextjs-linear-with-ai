@@ -74,7 +74,7 @@ export function TaskDashboard({
             onDateSortToggle={toggleDateSort}
           />
 
-          <AiPanel />
+          <AiPanel onOpenTask={openEditModal} tasks={initialTasks} />
 
           <Card className="overflow-hidden border-slate-800/95 bg-slate-900/60">
             <TaskList
