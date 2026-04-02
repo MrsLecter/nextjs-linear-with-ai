@@ -47,6 +47,9 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
+              <div className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+                Task ID: {task.id}
+              </div>
               <div className="truncate text-sm font-semibold text-slate-50">
                 {task.title}
               </div>

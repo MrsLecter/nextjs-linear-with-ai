@@ -93,6 +93,7 @@ export function TaskDashboard({
         task={selectedTask}
         onClose={closeModal}
         onSave={saveTask}
+        onDelete={requestDeleteTask}
       />
 
       <ConfirmationModal

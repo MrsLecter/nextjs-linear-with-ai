@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { type Task } from "#prisma/browser";
+import { Button } from "@/components/ui/Button";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Modal } from "@/components/ui/Modal";
+import { Tooltip } from "@/components/ui/Tooltip";
 import {
   CONFIRMATION_MESSAGES,
   TASK_MODAL_MESSAGES,
@@ -19,6 +22,7 @@ type TaskModalProps = {
   task?: Task | null;
   onClose: () => void;
   onSave: (values: TaskFormInput) => Promise<TaskMutationResult>;
+  onDelete?: (task: Task) => void;
 };
 
 export function TaskModal({
@@ -27,6 +31,7 @@ export function TaskModal({
   task,
   onClose,
   onSave,
+  onDelete,
 }: TaskModalProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isUnsavedChangesModalOpen, setIsUnsavedChangesModalOpen] = useState(false);
@@ -79,6 +84,12 @@ export function TaskModal({
       title={title}
       description={description}
     >
+      {!isCreateMode && task ? (
+        <p className="my-4 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          Task ID: {task.id}
+        </p>
+      ) : null}
+
       <TaskForm
         key={formKey}
         initialValues={initialValues}
@@ -86,6 +97,21 @@ export function TaskModal({
         onCancel={handleRequestClose}
         onDirtyChange={setHasUnsavedChanges}
         onSubmit={onSave}
+        footerStart={
+          !isCreateMode && task && onDelete ? (
+            <Tooltip content={`Delete task`}>
+              <Button
+                aria-label={`Delete task`}
+                onClick={() => onDelete(task)}
+                size="icon"
+                type="button"
+                variant="danger"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </Tooltip>
+          ) : undefined
+        }
       />
 
       <ConfirmationModal

@@ -23,6 +23,7 @@ type TaskFormProps = {
   onSubmit: (values: TaskFormInput) => Promise<TaskMutationResult>;
   onCancel: () => void;
   onDirtyChange?: (isDirty: boolean) => void;
+  footerStart?: ReactNode;
 };
 
 type FieldProps = {
@@ -83,6 +84,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
   onDirtyChange,
+  footerStart,
 }: TaskFormProps) {
   const {
     register,
@@ -219,13 +221,18 @@ export function TaskForm({
         </FormField>
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-slate-800 pt-4">
-        <Button onClick={onCancel} type="button" variant="ghost">
-          {TASK_MODAL_MESSAGES.CANCEL}
-        </Button>
-        <Button disabled={isSubmitting} type="submit">
-          {isSubmitting ? LOADING_STATES.SAVING : submitLabel}
-        </Button>
+      <div className="flex items-center justify-between gap-3 border-t border-slate-800 pt-4">
+        <div className="flex items-center gap-2">
+          {footerStart}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={onCancel} type="button" variant="ghost">
+            {TASK_MODAL_MESSAGES.CANCEL}
+          </Button>
+          <Button disabled={isSubmitting} type="submit">
+            {isSubmitting ? LOADING_STATES.SAVING : submitLabel}
+          </Button>
+        </div>
       </div>
     </form>
   );
