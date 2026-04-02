@@ -61,7 +61,7 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
                 </span>
               </Tooltip>
               <Tooltip content={`Created on ${createdAtLabel}`}>
-                <span className="rounded-md border border-slate-700/80 bg-slate-950/90 px-2 py-1 text-slate-400">
+                <span className="w-16 text-center rounded-md border border-slate-700/80 bg-slate-950/90 px-2 py-1 text-slate-400">
                   {createdAtLabel}
                 </span>
               </Tooltip>
