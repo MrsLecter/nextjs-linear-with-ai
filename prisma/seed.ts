@@ -1,5 +1,5 @@
 import { TaskPriority, TaskStatus } from "#prisma/client";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 
 const now = new Date();
 

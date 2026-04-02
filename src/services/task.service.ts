@@ -1,5 +1,5 @@
 import type { Task } from "#prisma/client";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 import { sortTasks } from "@/lib/utils/task.utils";
 import type {
   CreateTaskInput,
