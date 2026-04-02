@@ -22,6 +22,15 @@ type AiPanelProps = {
 export function AiPanel({ tasks, onOpenTask }: AiPanelProps) {
   const [isPrioritizationOpen, setIsPrioritizationOpen] = useState(false);
 
+  const handleOpenTaskFromPrioritization = (task: Task) => {
+    setIsPrioritizationOpen(false);
+
+    // Let the prioritization modal unmount before opening the task modal.
+    requestAnimationFrame(() => {
+      onOpenTask(task);
+    });
+  };
+
   return (
     <>
       <Card className="border-slate-800/95 bg-slate-900/70 px-4 py-4 sm:px-5">
@@ -58,7 +67,7 @@ export function AiPanel({ tasks, onOpenTask }: AiPanelProps) {
         onClose={() => {
           setIsPrioritizationOpen(false);
         }}
-        onOpenTask={onOpenTask}
+        onOpenTask={handleOpenTaskFromPrioritization}
         open={isPrioritizationOpen}
         tasks={tasks}
       />

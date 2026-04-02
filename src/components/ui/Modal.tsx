@@ -149,7 +149,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-[1px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-[1px] sm:p-6"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           handleClose();
@@ -163,40 +163,48 @@ export function Modal({
         aria-labelledby={titleId}
         aria-modal="true"
         className={cx(
-          "relative z-10 w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40",
+          "relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40 sm:max-h-[calc(100vh-3rem)]",
           className,
         )}
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-4">
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-50" id={titleId}>
-              {title}
-            </h2>
-            {description ? (
-              <p className="text-sm text-slate-400" id={descriptionId}>
-                {description}
-              </p>
-            ) : null}
+        <div className="shrink-0 border-b border-slate-800 px-5 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-slate-50" id={titleId}>
+                {title}
+              </h2>
+              {description ? (
+                <p className="text-sm text-slate-400" id={descriptionId}>
+                  {description}
+                </p>
+              ) : null}
+            </div>
+            <button
+              aria-label="Close modal"
+              className="inline-flex size-8 aspect-square items-center justify-center rounded-lg border border-slate-800 text-slate-400 transition-colors duration-150 hover:border-slate-700 hover:bg-slate-900 hover:text-slate-100 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
+              disabled={closeDisabled}
+              onClick={handleClose}
+              type="button"
+            >
+              <X className="size-4" />
+            </button>
           </div>
-          <button
-            aria-label="Close modal"
-            className="inline-flex size-8 aspect-square items-center justify-center rounded-lg border border-slate-800 text-slate-400 transition-colors duration-150 hover:border-slate-700 hover:bg-slate-900 hover:text-slate-100 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
-            disabled={closeDisabled}
-            onClick={handleClose}
-            type="button"
-          >
-            <X className="size-4" />
-          </button>
         </div>
-        {children ? <div className="px-5 py-4">{children}</div> : null}
+        {children ? (
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+            {children}
+          </div>
+        ) : null}
         {footer ? (
-          <div className="border-t border-slate-800 px-5 py-4">{footer}</div>
+          <div className="shrink-0 border-t border-slate-800 px-5 py-4">
+            {footer}
+          </div>
         ) : null}
       </div>
-    </div >,
+    </div>,
     document.body,
   );
 }

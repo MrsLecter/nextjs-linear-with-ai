@@ -9,15 +9,18 @@ const PRIORITIZATION_MODEL = "gpt-5.4-mini";
 const PRIORITIZATION_TIMEOUT_MS = 12_000;
 const PRIORITIZATION_SYSTEM_PROMPT = `You are an AI prioritization assistant inside a task management application.
 
-You must choose the single best next task from the provided task list.
+You must choose one primary next task from the provided task list.
 
-Your goal is to identify the most important and appropriate task to work on now.
+Your goal is to identify the most important and appropriate task to work on now, while also reflecting uncertainty and plausible prerequisite relationships without overstating them.
 
 Use these principles:
 - rely only on the provided task data
 - never invent facts
 - never invent task IDs
 - never select a task with status = "done"
+- do not assume hidden dependencies as facts
+- if a dependency is uncertain, say so explicitly
+- if a task seems important but may plausibly depend on another shortlisted task, prefer the task that more directly unblocks execution or release flow
 
 How to prioritize:
 - title and description are the primary signals of real importance
@@ -32,14 +35,17 @@ Output requirements:
 - no markdown
 - no extra text
 - explanation must be grounded only in the provided fields
-- explanation must be concise and specific`;
+- explanation must be concise and specific
+- return exactly one primary task
+- return up to 2 alternatives
+- return up to 1 possible prerequisite
+- alternatives and possiblePrerequisites must be arrays, even if empty`;
 
 const prioritizationResponseSchema = z
   .object({
-    recommendedTaskId: z.string().trim().min(1),
-    recommendedTaskTitle: z.string().trim().min(1),
+    primaryTaskId: z.string().trim().min(1),
+    primaryTaskTitle: z.string().trim().min(1),
     explanation: z.string().trim().min(1),
-    confidence: z.enum(["low", "medium", "high"]),
     alternatives: z
       .array(
         z
@@ -49,7 +55,17 @@ const prioritizationResponseSchema = z
           })
           .strict(),
       )
-      .optional(),
+      .max(2),
+    possiblePrerequisites: z
+      .array(
+        z
+          .object({
+            taskId: z.string().trim().min(1),
+            reason: z.string().trim().min(1),
+          })
+          .strict(),
+      )
+      .max(1),
   })
   .strict();
 
@@ -58,13 +74,16 @@ export type ScoredTask = Task & {
 };
 
 export type PrioritizationResult = {
-  recommendedTaskId: number;
-  recommendedTaskTitle: string;
+  primaryTaskId: number;
+  primaryTaskTitle: string;
   explanation: string;
-  confidence: "low" | "medium" | "high";
-  alternatives?: {
+  alternatives: {
     taskId: number;
     whyNotFirst: string;
+  }[];
+  possiblePrerequisites: {
+    taskId: number;
+    reason: string;
   }[];
 };
 
@@ -132,7 +151,7 @@ function buildModelInput(tasks: ScoredTask[]): CompactTaskInput[] {
 
 function buildUserPrompt(tasks: CompactTaskInput[]): string {
   return [
-    "Choose the single best next task to work on right now.",
+    "Choose one primary next task to work on right now.",
     "",
     "Use all provided fields, but prioritize based mainly on title and description.",
     "",
@@ -157,9 +176,12 @@ function buildUserPrompt(tasks: CompactTaskInput[]): string {
     "- prefer concrete and actionable tasks over vague tasks when importance is otherwise close",
     '- prefer "todo" over "in-progress" when the semantic importance is close',
     '- do not treat words like "urgent", "critical", or "asap" as sufficient by themselves',
+    "- if a task appears highly important but may plausibly depend on another shortlisted task, prefer the task that more directly unblocks execution or release flow",
+    "- do not assume hidden dependencies as facts",
+    "- when dependency is uncertain from the provided fields, reflect that uncertainty in alternatives or possiblePrerequisites",
     "",
     "Return JSON with exactly this shape:",
-    '{ "recommendedTaskId": "string", "recommendedTaskTitle": "string", "explanation": "string", "confidence": "low" | "medium" | "high", "alternatives"?: [{ "taskId": "string", "whyNotFirst": "string" }] }',
+    '{ "primaryTaskId": "string", "primaryTaskTitle": "string", "explanation": "string", "alternatives": [{ "taskId": "string", "whyNotFirst": "string" }], "possiblePrerequisites": [{ "taskId": "string", "reason": "string" }] }',
     "",
     "Explanation requirements:",
     "- 1-3 sentences",
@@ -167,6 +189,17 @@ function buildUserPrompt(tasks: CompactTaskInput[]): string {
     "- specific",
     "- grounded only in the input data",
     "- mention the strongest reason or two for why this task is first now",
+    "",
+    "Alternatives requirements:",
+    "- include up to 2 viable alternative tasks",
+    "- explain briefly why each is not first",
+    "- do not include the primary task",
+    "",
+    "Possible prerequisite requirements:",
+    "- include at most 1 task",
+    "- only include it if a prerequisite relationship seems plausible from the provided fields",
+    '- do not present uncertain dependencies as facts; use wording like "may unblock" or "could be needed first" when appropriate',
+    "- do not include the primary task",
     "",
     "Tasks:",
     "",
@@ -211,12 +244,14 @@ export function validatePrioritizationConsistency(
   tasks: ScoredTask[],
 ): PrioritizationResult {
   const tasksById = buildTaskLookup(tasks);
-  const recommendedTask = getTaskOrThrow(
-    result.recommendedTaskId,
+  const primaryTask = getTaskOrThrow(
+    result.primaryTaskId,
     tasksById,
-    "recommendedTaskId",
+    "primaryTaskId",
   );
-  const normalizedAlternatives = result.alternatives?.map((alternative, index) => {
+  const normalizedPrimaryTaskId = toTaskIdKey(primaryTask.id);
+  const usedTaskIds = new Set<string>([normalizedPrimaryTaskId]);
+  const normalizedAlternatives = result.alternatives.map((alternative, index) => {
     const fieldPath = `alternatives[${index}].taskId`;
     const alternativeTask = getTaskOrThrow(
       alternative.taskId,
@@ -225,23 +260,57 @@ export function validatePrioritizationConsistency(
     );
 
     assertTaskIsOpen(alternativeTask, fieldPath);
+    const normalizedAlternativeTaskId = toTaskIdKey(alternativeTask.id);
+
+    if (usedTaskIds.has(normalizedAlternativeTaskId)) {
+      throw new Error(
+        `Prioritization consistency check failed: ${fieldPath} "${normalizedAlternativeTaskId}" is duplicated or matches the primary task.`,
+      );
+    }
+
+    usedTaskIds.add(normalizedAlternativeTaskId);
 
     return {
       taskId: alternativeTask.id,
       whyNotFirst: alternative.whyNotFirst,
     };
   });
+  const normalizedPossiblePrerequisites = result.possiblePrerequisites.map(
+    (prerequisite, index) => {
+      const fieldPath = `possiblePrerequisites[${index}].taskId`;
+      const prerequisiteTask = getTaskOrThrow(
+        prerequisite.taskId,
+        tasksById,
+        fieldPath,
+      );
 
-  assertTaskIsOpen(recommendedTask, "recommendedTaskId");
+      assertTaskIsOpen(prerequisiteTask, fieldPath);
+
+      const normalizedPrerequisiteTaskId = toTaskIdKey(prerequisiteTask.id);
+
+      if (usedTaskIds.has(normalizedPrerequisiteTaskId)) {
+        throw new Error(
+          `Prioritization consistency check failed: ${fieldPath} "${normalizedPrerequisiteTaskId}" is duplicated or matches another selected task.`,
+        );
+      }
+
+      usedTaskIds.add(normalizedPrerequisiteTaskId);
+
+      return {
+        taskId: prerequisiteTask.id,
+        reason: prerequisite.reason,
+      };
+    },
+  );
+
+  assertTaskIsOpen(primaryTask, "primaryTaskId");
 
   return {
-    recommendedTaskId: recommendedTask.id,
-    recommendedTaskTitle: recommendedTask.title,
+    primaryTaskId: primaryTask.id,
+    primaryTaskTitle: primaryTask.title,
     explanation: result.explanation,
-    confidence: result.confidence,
-    ...(normalizedAlternatives && normalizedAlternatives.length > 0
-      ? { alternatives: normalizedAlternatives }
-      : {}),
+    alternatives: normalizedAlternatives,
+    possiblePrerequisites: normalizedPossiblePrerequisites,
   };
 }
 
@@ -270,37 +339,40 @@ function compareFallbackCandidates(left: ScoredTask, right: ScoredTask): number 
   return leftId.localeCompare(rightId);
 }
 
-function selectFallbackTask(tasks: ScoredTask[]): ScoredTask | null {
+function rankFallbackTasks(tasks: ScoredTask[]): ScoredTask[] {
   const openTasks = tasks.filter((task) => task.status !== TaskStatus.DONE);
 
   if (openTasks.length === 0) {
-    return null;
+    return [];
   }
 
-  return [...openTasks].sort(compareFallbackCandidates)[0] ?? null;
+  return [...openTasks].sort(compareFallbackCandidates);
 }
 
-function buildFallbackExplanation(): string {
-  return "This task is recommended because it ranks highest by the deterministic baseline using priority, status, and age.";
+function buildFallbackExplanation(primaryTask: ScoredTask): string {
+  return `This task stands out as the strongest next step based on its deterministic baseline score and current execution readiness. "${primaryTask.title}" ranks highest when priority, status, and age are weighed together.`;
 }
 
 export function buildFallbackRecommendation(
   tasks: ScoredTask[],
 ): PrioritizationResult | null {
-  const topTask = selectFallbackTask(tasks);
+  const rankedTasks = rankFallbackTasks(tasks);
+  const topTask = rankedTasks[0] ?? null;
 
   if (!topTask) {
     return null;
   }
 
   return {
-    recommendedTaskId: topTask.id,
-    recommendedTaskTitle: topTask.title,
-    explanation: buildFallbackExplanation(),
-    confidence:
-      tasks.filter((task) => task.status !== TaskStatus.DONE).length === 1
-        ? "high"
-        : "medium",
+    primaryTaskId: topTask.id,
+    primaryTaskTitle: topTask.title,
+    explanation: buildFallbackExplanation(topTask),
+    alternatives: rankedTasks.slice(1, 3).map((task) => ({
+      taskId: task.id,
+      whyNotFirst:
+        "This task is also a strong candidate, but it ranks slightly below the primary task on the deterministic baseline.",
+    })),
+    possiblePrerequisites: [],
   };
 }
 

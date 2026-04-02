@@ -1,15 +1,16 @@
 import type { Task } from "#prisma/browser";
 
-type PrioritizationConfidence = "low" | "medium" | "high";
-
 export type PrioritizationResult = {
-  recommendedTaskId: Task["id"];
-  recommendedTaskTitle: Task["title"];
+  primaryTaskId: Task["id"];
+  primaryTaskTitle: Task["title"];
   explanation: string;
-  confidence: PrioritizationConfidence;
-  alternatives?: {
+  alternatives: {
     taskId: Task["id"];
     whyNotFirst: string;
+  }[];
+  possiblePrerequisites: {
+    taskId: Task["id"];
+    reason: string;
   }[];
 };
 

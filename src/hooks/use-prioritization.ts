@@ -2,13 +2,18 @@
 
 import { useCallback, useState } from "react";
 
-type PrioritizationConfidence = "low" | "medium" | "high";
-
 export type PrioritizationData = {
-  recommendedTaskId: string;
-  recommendedTaskTitle: string;
+  primaryTaskId: string;
+  primaryTaskTitle: string;
   explanation: string;
-  confidence: PrioritizationConfidence;
+  alternatives: {
+    taskId: string;
+    whyNotFirst: string;
+  }[];
+  possiblePrerequisites: {
+    taskId: string;
+    reason: string;
+  }[];
 } | null;
 
 type PrioritizationSuccessResponse = {
@@ -26,11 +31,41 @@ type PrioritizationErrorResponse = {
 
 const DEFAULT_ERROR_MESSAGE =
   "Failed to generate prioritization recommendation.";
+const DEFAULT_EXPLANATION =
+  "This task appears to be the strongest next step based on the current task data.";
+const DEFAULT_ALTERNATIVE_REASON =
+  "This was considered, but it was not selected as the first task.";
+const DEFAULT_PREREQUISITE_REASON =
+  "This may be worth checking first based on the available task details.";
 
-function isPrioritizationConfidence(
-  value: unknown,
-): value is PrioritizationConfidence {
-  return value === "low" || value === "medium" || value === "high";
+function isAlternative(value: unknown): value is NonNullable<
+  PrioritizationData
+>["alternatives"][number] {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.taskId === "string" &&
+    typeof candidate.whyNotFirst === "string"
+  );
+}
+
+function isPossiblePrerequisite(value: unknown): value is NonNullable<
+  PrioritizationData
+>["possiblePrerequisites"][number] {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.taskId === "string" &&
+    typeof candidate.reason === "string"
+  );
 }
 
 function isPrioritizationResult(
@@ -43,11 +78,41 @@ function isPrioritizationResult(
   const candidate = value as Record<string, unknown>;
 
   return (
-    typeof candidate.recommendedTaskId === "string" &&
-    typeof candidate.recommendedTaskTitle === "string" &&
+    typeof candidate.primaryTaskId === "string" &&
+    typeof candidate.primaryTaskTitle === "string" &&
     typeof candidate.explanation === "string" &&
-    isPrioritizationConfidence(candidate.confidence)
+    Array.isArray(candidate.alternatives) &&
+    candidate.alternatives.every(isAlternative) &&
+    Array.isArray(candidate.possiblePrerequisites) &&
+    candidate.possiblePrerequisites.every(isPossiblePrerequisite)
   );
+}
+
+function normalizeText(value: string, fallback: string): string {
+  const normalizedValue = value.trim();
+
+  return normalizedValue.length > 0 ? normalizedValue : fallback;
+}
+
+function normalizePrioritizationResult(
+  value: Exclude<PrioritizationData, null>,
+): Exclude<PrioritizationData, null> {
+  return {
+    primaryTaskId: value.primaryTaskId,
+    primaryTaskTitle: normalizeText(value.primaryTaskTitle, value.primaryTaskId),
+    explanation: normalizeText(value.explanation, DEFAULT_EXPLANATION),
+    alternatives: value.alternatives.map((alternative) => ({
+      taskId: alternative.taskId,
+      whyNotFirst: normalizeText(
+        alternative.whyNotFirst,
+        DEFAULT_ALTERNATIVE_REASON,
+      ),
+    })),
+    possiblePrerequisites: value.possiblePrerequisites.map((prerequisite) => ({
+      taskId: prerequisite.taskId,
+      reason: normalizeText(prerequisite.reason, DEFAULT_PREREQUISITE_REASON),
+    })),
+  };
 }
 
 function isSuccessResponse(
@@ -106,7 +171,7 @@ export function usePrioritization() {
       }
 
       if (isSuccessResponse(payload)) {
-        setData(payload.data);
+        setData(normalizePrioritizationResult(payload.data));
         return;
       }
 

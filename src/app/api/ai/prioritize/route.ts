@@ -16,10 +16,19 @@ export async function POST() {
 
     return NextResponse.json({
       data: {
-        recommendedTaskId: String(recommendation.recommendedTaskId),
-        recommendedTaskTitle: recommendation.recommendedTaskTitle,
+        primaryTaskId: String(recommendation.primaryTaskId),
+        primaryTaskTitle: recommendation.primaryTaskTitle,
         explanation: recommendation.explanation,
-        confidence: recommendation.confidence,
+        alternatives: recommendation.alternatives.map((alternative) => ({
+          taskId: String(alternative.taskId),
+          whyNotFirst: alternative.whyNotFirst,
+        })),
+        possiblePrerequisites: recommendation.possiblePrerequisites.map(
+          (prerequisite) => ({
+            taskId: String(prerequisite.taskId),
+            reason: prerequisite.reason,
+          }),
+        ),
       },
     });
   } catch (error) {

@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowUpRight, Bot, Sparkles } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  AlertCircle,
+  ArrowUpRight,
+  Bot,
+  CornerDownRight,
+  Sparkles,
+} from "lucide-react";
 import type { Task } from "#prisma/browser";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { usePrioritization } from "@/hooks/use-prioritization";
+import {
+  usePrioritization,
+  type PrioritizationData,
+} from "@/hooks/use-prioritization";
 import { cx } from "@/lib/helpers";
 
 type PrioritizationModalProps = {
@@ -17,7 +26,7 @@ type PrioritizationModalProps = {
 
 function LoadingState() {
   return (
-    <div aria-live="polite" className="space-y-5">
+    <div aria-live="polite" className="space-y-6">
       <div className="flex items-center gap-3">
         <div className="flex size-11 items-center justify-center rounded-2xl border border-blue-500/25 bg-blue-500/10 text-blue-200">
           <div className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -32,7 +41,7 @@ function LoadingState() {
         </div>
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+      <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
         <div className="h-3 w-28 animate-pulse rounded-full bg-slate-800" />
         <div className="h-6 w-3/4 animate-pulse rounded-full bg-slate-800/90" />
         <div className="space-y-2">
@@ -80,60 +89,194 @@ function ErrorState({ message }: { message: string }) {
 }
 
 function SuccessState({
-  confidence,
-  recommendedTaskId,
-  explanation,
-  recommendedTaskTitle,
+  data,
+  tasks,
+  onOpenTask,
 }: {
-  confidence: "low" | "medium" | "high";
-  recommendedTaskId: string;
-  explanation: string;
-  recommendedTaskTitle: string;
+  data: Exclude<PrioritizationData, null>;
+  tasks: Task[];
+  onOpenTask?: (task: Task) => void;
 }) {
+  const tasksById = new Map(tasks.map((task) => [String(task.id), task]));
+  const primaryTask = tasksById.get(data.primaryTaskId) ?? null;
+  const alternatives = data.alternatives
+    .map((alternative) => ({
+      ...alternative,
+      task: tasksById.get(alternative.taskId) ?? null,
+    }))
+    .slice(0, 2);
+  const possiblePrerequisites = data.possiblePrerequisites
+    .map((prerequisite) => ({
+      ...prerequisite,
+      task: tasksById.get(prerequisite.taskId) ?? null,
+    }))
+    .slice(0, 1);
+
+  const getTaskLabel = (
+    taskId: string,
+    task: Task | null,
+    fallbackTitle?: string,
+  ) => {
+    const title = task?.title?.trim() || fallbackTitle?.trim();
+
+    return title && title.length > 0 ? title : `Task #${taskId}`;
+  };
+
   return (
-    <div aria-live="polite" className="space-y-5">
+    <div aria-live="polite" className="space-y-6">
       <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-medium tracking-[0.02em] text-blue-100">
         <Sparkles className="size-3.5" />
         AI priority suggestion
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-[0_0_0_1px_rgba(148,163,184,0.04)]">
+      <TaskCard
+        borderClassName="border-blue-500/20"
+        className="space-y-5 bg-slate-900/80 shadow-[0_0_0_1px_rgba(96,165,250,0.08)]"
+        hint={primaryTask && onOpenTask ? "Open task" : undefined}
+        onClick={primaryTask && onOpenTask ? () => onOpenTask(primaryTask) : undefined}
+        title={getTaskLabel(data.primaryTaskId, primaryTask, data.primaryTaskTitle)}
+      >
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
             Recommended next task
           </p>
-          <h3 className="text-xl font-semibold tracking-[-0.02em] text-slate-50">
-            {recommendedTaskTitle}
-          </h3>
+          <p className="text-sm text-slate-400">Task ID: {data.primaryTaskId}</p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Recommended task ID
-            </p>
-            <p className="mt-2 text-sm font-medium text-slate-200">
-              {recommendedTaskId}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Confidence
-            </p>
-            <p className="mt-2 text-sm font-medium capitalize text-slate-200">
-              {confidence}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 sm:p-5">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
             Explanation
           </p>
-          <p className="text-sm leading-6 text-slate-300">{explanation}</p>
+          <p className="mt-3 break-words text-sm leading-7 text-slate-300">
+            {data.explanation}
+          </p>
         </div>
-      </div>
+      </TaskCard>
+
+      {alternatives.length > 0 ? (
+        <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              Alternatives
+            </p>
+            <p className="text-sm leading-6 text-slate-400">
+              Strong backup options if the primary recommendation is blocked.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {alternatives.map((alternative) => (
+              <TaskCard
+                hint={alternative.task && onOpenTask ? "Open task" : undefined}
+                key={alternative.taskId}
+                onClick={
+                  alternative.task && onOpenTask
+                    ? () => onOpenTask(alternative.task)
+                    : undefined
+                }
+                title={getTaskLabel(alternative.taskId, alternative.task)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-slate-300">
+                    <CornerDownRight className="size-4" />
+                  </div>
+                  <div className="min-w-0 space-y-3">
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500">
+                        Task ID: {alternative.taskId}
+                      </p>
+                    </div>
+                    <p className="break-words text-sm leading-7 text-slate-400">
+                      {alternative.whyNotFirst}
+                    </p>
+                  </div>
+                </div>
+              </TaskCard>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {possiblePrerequisites.length > 0 ? (
+        <section className="space-y-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-200">
+              <AlertCircle className="size-4" />
+            </div>
+            <div className="min-w-0 space-y-2">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-100/80">
+                Possible prerequisite
+              </p>
+              <p className="text-sm leading-6 text-slate-300">
+                This is presented as a tentative dependency, not a confirmed
+                requirement.
+              </p>
+            </div>
+          </div>
+
+          {possiblePrerequisites.map((prerequisite) => (
+            <TaskCard
+              borderClassName="border-amber-500/15"
+              hint={prerequisite.task && onOpenTask ? "Open task" : undefined}
+              key={prerequisite.taskId}
+              onClick={
+                prerequisite.task && onOpenTask
+                  ? () => onOpenTask(prerequisite.task)
+                  : undefined
+              }
+              title={getTaskLabel(prerequisite.taskId, prerequisite.task)}
+            >
+              <div className="space-y-1">
+                <p className="text-xs text-slate-500">
+                  Task ID: {prerequisite.taskId}
+                </p>
+              </div>
+              <p className="mt-3 break-words text-sm leading-7 text-slate-300">
+                {prerequisite.reason}
+              </p>
+            </TaskCard>
+          ))}
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+function TaskCard({
+  children,
+  title,
+  onClick,
+  hint,
+  borderClassName,
+  className,
+}: {
+  children: ReactNode;
+  title: string;
+  onClick?: () => void;
+  hint?: string;
+  borderClassName?: string;
+  className?: string;
+}) {
+  const Component = onClick ? "button" : "div";
+
+  return (
+    <Component
+      className={cx(
+        "rounded-2xl border bg-slate-950/50 p-4 text-left sm:p-5",
+        borderClassName ?? "border-slate-800/80",
+        className,
+        onClick
+          ? "w-full cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:bg-slate-900/80 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
+          : "",
+      )}
+      {...(onClick ? { onClick, type: "button" as const } : {})}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="min-w-0 text-sm font-semibold text-slate-100">{title}</h4>
+        {hint ? <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-slate-500" /> : null}
+      </div>
+      <div className="mt-3">{children}</div>
+    </Component>
   );
 }
 
@@ -158,7 +301,7 @@ export function PrioritizationModal({
   }, [open, runPrioritization]);
 
   const recommendedTask = data
-    ? tasks.find((task) => String(task.id) === data.recommendedTaskId) ?? null
+    ? tasks.find((task) => String(task.id) === data.primaryTaskId) ?? null
     : null;
 
   const showLoading = open && (!hasRequestedRecommendation || isLoading);
@@ -170,6 +313,11 @@ export function PrioritizationModal({
   const handleRetry = () => {
     setHasRequestedRecommendation(true);
     void runPrioritization();
+  };
+
+  const handleOpenTask = (task: Task) => {
+    onClose();
+    onOpenTask?.(task);
   };
 
   return (
@@ -189,10 +337,7 @@ export function PrioritizationModal({
           {showSuccess && recommendedTask && onOpenTask ? (
             <Button
               leadingIcon={<ArrowUpRight className="size-4" />}
-              onClick={() => {
-                onClose();
-                onOpenTask(recommendedTask);
-              }}
+              onClick={() => handleOpenTask(recommendedTask)}
               variant="primary"
             >
               Open task
@@ -213,10 +358,9 @@ export function PrioritizationModal({
         {showLoading ? <LoadingState /> : null}
         {showSuccess && data ? (
           <SuccessState
-            confidence={data.confidence}
-            explanation={data.explanation}
-            recommendedTaskId={data.recommendedTaskId}
-            recommendedTaskTitle={data.recommendedTaskTitle}
+            data={data}
+            onOpenTask={onOpenTask ? handleOpenTask : undefined}
+            tasks={tasks}
           />
         ) : null}
         {showEmpty ? <EmptyState /> : null}
