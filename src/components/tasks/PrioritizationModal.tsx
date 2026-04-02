@@ -16,6 +16,7 @@ import {
   type PrioritizationData,
 } from "@/hooks/use-prioritization";
 import { cx } from "@/lib/helpers";
+import { getPrioritizationTasksSignature } from "@/lib/utils/prioritization-cache";
 
 type PrioritizationModalProps = {
   open: boolean;
@@ -286,19 +287,26 @@ export function PrioritizationModal({
   onClose,
   onOpenTask,
 }: PrioritizationModalProps) {
-  const { data, error, isLoading, runPrioritization } = usePrioritization();
+  const {
+    data,
+    error,
+    isLoading,
+    runPrioritization,
+    cancelPrioritization,
+  } = usePrioritization();
   const [hasRequestedRecommendation, setHasRequestedRecommendation] =
     useState(false);
+  const tasksSignature = getPrioritizationTasksSignature(tasks);
 
   useEffect(() => {
     if (!open) {
-      setHasRequestedRecommendation(false);
+      cancelPrioritization();
       return;
     }
 
     setHasRequestedRecommendation(true);
-    void runPrioritization();
-  }, [open, runPrioritization]);
+    void runPrioritization(tasks);
+  }, [cancelPrioritization, open, runPrioritization, tasks, tasksSignature]);
 
   const recommendedTask = data
     ? tasks.find((task) => String(task.id) === data.primaryTaskId) ?? null
@@ -312,11 +320,10 @@ export function PrioritizationModal({
 
   const handleRetry = () => {
     setHasRequestedRecommendation(true);
-    void runPrioritization();
+    void runPrioritization(tasks);
   };
 
   const handleOpenTask = (task: Task) => {
-    onClose();
     onOpenTask?.(task);
   };
 

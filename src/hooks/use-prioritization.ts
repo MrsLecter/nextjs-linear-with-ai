@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Task } from "#prisma/browser";
+import {
+  getPrioritizationTasksSignature,
+  PRIORITIZATION_CLIENT_CACHE_TTL_MS,
+} from "@/lib/utils/prioritization-cache";
 
 export type PrioritizationData = {
   primaryTaskId: string;
@@ -29,6 +34,11 @@ type PrioritizationErrorResponse = {
   error?: string;
 };
 
+type PrioritizationCacheEntry = {
+  data: PrioritizationData;
+  expiresAt: number;
+};
+
 const DEFAULT_ERROR_MESSAGE =
   "Failed to generate prioritization recommendation.";
 const DEFAULT_EXPLANATION =
@@ -37,6 +47,7 @@ const DEFAULT_ALTERNATIVE_REASON =
   "This was considered, but it was not selected as the first task.";
 const DEFAULT_PREREQUISITE_REASON =
   "This may be worth checking first based on the available task details.";
+const prioritizationClientCache = new Map<string, PrioritizationCacheEntry>();
 
 function isAlternative(value: unknown): value is NonNullable<
   PrioritizationData
@@ -163,7 +174,24 @@ export function usePrioritization() {
     setIsLoading(false);
   }, []);
 
-  const runPrioritization = useCallback(async () => {
+  const runPrioritization = useCallback(async (tasks: Task[]) => {
+    const tasksSignature = getPrioritizationTasksSignature(tasks);
+    const cachedEntry = prioritizationClientCache.get(tasksSignature);
+    const now = Date.now();
+
+    if (cachedEntry && cachedEntry.expiresAt > now) {
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+      setError(null);
+      setData(cachedEntry.data);
+      setIsLoading(false);
+      return;
+    }
+
+    if (cachedEntry) {
+      prioritizationClientCache.delete(tasksSignature);
+    }
+
     const requestId = activeRequestIdRef.current + 1;
     activeRequestIdRef.current = requestId;
     abortControllerRef.current?.abort();
@@ -192,11 +220,20 @@ export function usePrioritization() {
       }
 
       if (isSuccessResponse(payload)) {
-        setData(normalizePrioritizationResult(payload.data));
+        const normalizedData = normalizePrioritizationResult(payload.data);
+        prioritizationClientCache.set(tasksSignature, {
+          data: normalizedData,
+          expiresAt: Date.now() + PRIORITIZATION_CLIENT_CACHE_TTL_MS,
+        });
+        setData(normalizedData);
         return;
       }
 
       if (isEmptyResponse(payload)) {
+        prioritizationClientCache.set(tasksSignature, {
+          data: null,
+          expiresAt: Date.now() + PRIORITIZATION_CLIENT_CACHE_TTL_MS,
+        });
         setData(null);
         return;
       }
