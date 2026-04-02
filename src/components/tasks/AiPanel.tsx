@@ -23,12 +23,7 @@ export function AiPanel({ tasks, onOpenTask }: AiPanelProps) {
   const [isPrioritizationOpen, setIsPrioritizationOpen] = useState(false);
 
   const handleOpenTaskFromPrioritization = (task: Task) => {
-    setIsPrioritizationOpen(false);
-
-    // Let the prioritization modal unmount before opening the task modal.
-    requestAnimationFrame(() => {
-      onOpenTask(task);
-    });
+    onOpenTask(task);
   };
 
   return (

@@ -3,6 +3,10 @@ import { TaskStatus } from "#prisma/browser";
 import { z } from "zod";
 import { clientOpenAI } from "@/lib/ai/openai";
 import { calculateTaskScore } from "@/lib/ai/features/suggest-next-task/utils";
+import {
+  getPrioritizationTasksSignature,
+  PRIORITIZATION_SERVER_CACHE_TTL_MS,
+} from "@/lib/utils/prioritization-cache";
 import { listTasks } from "@/services/task.service";
 
 const PRIORITIZATION_MODEL = "gpt-5.4-mini";
@@ -101,6 +105,16 @@ type PrioritizationModelResponse = z.infer<
   typeof prioritizationResponseSchema
 >;
 
+type PrioritizationServerCacheEntry = {
+  data: PrioritizationResult | null;
+  expiresAt: number;
+};
+
+const prioritizationServerCache = new Map<
+  string,
+  PrioritizationServerCacheEntry
+>();
+
 function isValidCreatedAt(createdAt: Task["createdAt"]): boolean {
   return !Number.isNaN(new Date(createdAt).getTime());
 }
@@ -135,6 +149,33 @@ export async function getOpenTasksWithScores(): Promise<ScoredTask[]> {
       baselineScore: calculateTaskScore(task),
     }))
     .sort((left, right) => right.baselineScore - left.baselineScore);
+}
+
+function getCachedPrioritizationResult(
+  tasksSignature: string,
+): PrioritizationResult | null | undefined {
+  const cachedEntry = prioritizationServerCache.get(tasksSignature);
+
+  if (!cachedEntry) {
+    return undefined;
+  }
+
+  if (cachedEntry.expiresAt <= Date.now()) {
+    prioritizationServerCache.delete(tasksSignature);
+    return undefined;
+  }
+
+  return cachedEntry.data;
+}
+
+function setCachedPrioritizationResult(
+  tasksSignature: string,
+  data: PrioritizationResult | null,
+): void {
+  prioritizationServerCache.set(tasksSignature, {
+    data,
+    expiresAt: Date.now() + PRIORITIZATION_SERVER_CACHE_TTL_MS,
+  });
 }
 
 function buildModelInput(tasks: ScoredTask[]): CompactTaskInput[] {
@@ -416,19 +457,32 @@ async function callPrioritizationModel(
 
 export async function getPrioritizationRecommendation(): Promise<PrioritizationResult | null> {
   const scoredTasks = await getOpenTasksWithScores();
+  const tasksSignature = getPrioritizationTasksSignature(scoredTasks);
+  const cachedResult = getCachedPrioritizationResult(tasksSignature);
+
+  if (cachedResult !== undefined) {
+    return cachedResult;
+  }
 
   if (scoredTasks.length === 0) {
+    setCachedPrioritizationResult(tasksSignature, null);
     return null;
   }
 
   if (scoredTasks.length === 1) {
-    return buildFallbackRecommendation(scoredTasks);
+    const fallbackRecommendation = buildFallbackRecommendation(scoredTasks);
+    setCachedPrioritizationResult(tasksSignature, fallbackRecommendation);
+    return fallbackRecommendation;
   }
 
   try {
-    return await callPrioritizationModel(scoredTasks);
+    const recommendation = await callPrioritizationModel(scoredTasks);
+    setCachedPrioritizationResult(tasksSignature, recommendation);
+    return recommendation;
   } catch (error) {
     console.error("Prioritization service fell back to baseline scoring:", error);
-    return buildFallbackRecommendation(scoredTasks);
+    const fallbackRecommendation = buildFallbackRecommendation(scoredTasks);
+    setCachedPrioritizationResult(tasksSignature, fallbackRecommendation);
+    return fallbackRecommendation;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type PrioritizationData = {
   primaryTaskId: string;
@@ -153,16 +153,37 @@ export function usePrioritization() {
   const [data, setData] = useState<PrioritizationData>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const activeRequestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const cancelPrioritization = useCallback(() => {
+    activeRequestIdRef.current += 1;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
+  }, []);
 
   const runPrioritization = useCallback(async () => {
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    abortControllerRef.current?.abort();
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await fetch("/api/ai/prioritize", {
         method: "POST",
+        signal: abortController.signal,
       });
       const payload = (await response.json()) as unknown;
+
+      if (activeRequestIdRef.current !== requestId) {
+        return;
+      }
 
       if (!response.ok) {
         setData(null);
@@ -182,18 +203,35 @@ export function usePrioritization() {
 
       setData(null);
       setError(getErrorMessage(payload));
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof DOMException &&
+        error.name === "AbortError"
+      ) {
+        return;
+      }
+
+      if (activeRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setData(null);
       setError(DEFAULT_ERROR_MESSAGE);
     } finally {
-      setIsLoading(false);
+      if (activeRequestIdRef.current === requestId) {
+        setIsLoading(false);
+        abortControllerRef.current = null;
+      }
     }
   }, []);
+
+  useEffect(() => cancelPrioritization, [cancelPrioritization]);
 
   return {
     data,
     isLoading,
     error,
     runPrioritization,
+    cancelPrioritization,
   };
 }
