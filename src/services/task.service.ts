@@ -1,0 +1,73 @@
+import type { Task } from "#prisma/client";
+import prisma from "@/lib/prisma";
+import { sortTasks } from "@/lib/utils/task.utils";
+import type {
+  CreateTaskInput,
+  UpdateTaskInput,
+  ListTasksInput,
+} from "@/lib/validation/task.schemas";
+import { deleteTaskSchema } from "@/lib/validation/task.schemas";
+
+export async function listTasks(
+  options: ListTasksInput
+): Promise<Task[]> {
+  const tasks = await prisma.task.findMany({
+    where: options.status ? { status: options.status } : undefined,
+    orderBy: { createdAt: options.dateSort ?? "desc" },
+  });
+
+  if (options.prioritySort) {
+    return sortTasks(
+      tasks,
+      options.prioritySort,
+      options.dateSort ?? "desc",
+    );
+  }
+
+  return tasks;
+}
+
+export async function getTaskById(id: Task["id"]): Promise<Task | null> {
+  return prisma.task.findUnique({
+    where: { id },
+  });
+}
+
+export async function createTask(input: CreateTaskInput): Promise<Task> {
+  return prisma.task.create({
+    data: input,
+  });
+}
+
+export async function updateTask(
+  id: Task["id"],
+  input: UpdateTaskInput,
+): Promise<Task | null> {
+  const existingTask = await getTaskById(id);
+
+  if (!existingTask) {
+    return null;
+  }
+
+  if (Object.keys(input).length === 0) {
+    return existingTask;
+  }
+
+  return prisma.task.update({
+    where: { id },
+    data: input,
+  });
+}
+
+export async function deleteTask(
+  id: Task["id"],
+): Promise<{ deleted: boolean }> {
+  const parsedId = deleteTaskSchema.parse({ id });
+  const result = await prisma.task.deleteMany({
+    where: { id: parsedId.id },
+  });
+
+  return {
+    deleted: result.count > 0,
+  };
+}
