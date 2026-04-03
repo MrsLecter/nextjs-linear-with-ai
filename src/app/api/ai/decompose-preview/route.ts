@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 import {
   decompositionPreviewRequestSchema,
   decompositionPreviewResponseSchema,
-} from "@/lib/ai/schemas/task-decomposition";
+} from "@/lib/validation/task-decomposition.schemas";
 import { taskDecompositionAgent } from "@/services/task-decomposition-agent";
 import {
   isOpenAIErrorWithStatus,

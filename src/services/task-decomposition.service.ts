@@ -3,11 +3,11 @@ import prisma from "@/lib/db/prisma";
 import type {
   CreateSubtasksInput,
   CreateSubtasksResponse,
-} from "@/lib/ai/schemas/task-decomposition";
+} from "@/lib/validation/task-decomposition.schemas";
 import {
   createSubtasksInputSchema,
   createSubtasksResponseSchema,
-} from "@/lib/ai/schemas/task-decomposition";
+} from "@/lib/validation/task-decomposition.schemas";
 import {
   createSubtasksForParentTask,
   getTaskById,
@@ -57,7 +57,7 @@ export async function createTaskSubtasks(
 
       return (
         titles.findIndex((candidate) => candidate.toLocaleLowerCase() === normalizedTitle)
-          === index &&
+        === index &&
         existingTitleSet.has(normalizedTitle)
       );
     });

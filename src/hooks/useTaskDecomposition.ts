@@ -4,13 +4,13 @@ import { useCallback, useRef, useState } from "react";
 import type {
   DecompositionPreviewRequest,
   DecompositionPreviewResult,
-} from "@/lib/ai/types/task-decomposition";
+} from "@/lib/ai/features/generate-subtask/types";
 import {
   createSubtasksRequestBodySchema,
   createSubtasksResponseSchema,
   decompositionPreviewRequestSchema,
   decompositionPreviewResponseSchema,
-} from "@/lib/ai/schemas/task-decomposition";
+} from "@/lib/validation/task-decomposition.schemas";
 
 type DecompositionState =
   | {

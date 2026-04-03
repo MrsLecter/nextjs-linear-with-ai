@@ -2,7 +2,7 @@
 
 import { Bot, HelpCircle, Sparkles, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import type { DecompositionPreviewResult } from "@/lib/ai/types/task-decomposition";
+import type { DecompositionPreviewResult } from "@/lib/ai/features/generate-subtask/types";
 
 type ReadyDecompositionPreview = Extract<
   DecompositionPreviewResult,

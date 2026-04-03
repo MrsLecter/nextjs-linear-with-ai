@@ -8,14 +8,16 @@ import type {
 } from "openai/resources/responses/responses";
 import { clientOpenAI } from "@/lib/ai/openai";
 import {
-  ASSESS_TASK_DECOMPOSITION_TOOL_NAME,
-  GENERATE_SUBTASKS_TOOL_NAME,
   TASK_DECOMPOSITION_AGENT_SYSTEM_PROMPT,
   TASK_DECOMPOSITION_ASSESSMENT_SYSTEM_PROMPT,
   TASK_DECOMPOSITION_GENERATION_SYSTEM_PROMPT,
+} from "@/lib/ai/features/generate-subtask/prompts";
+import {
+  ASSESS_TASK_DECOMPOSITION_TOOL_NAME,
+  GENERATE_SUBTASKS_TOOL_NAME,
   TASK_DECOMPOSITION_MODEL,
   TASK_DECOMPOSITION_TIMEOUT_MS,
-} from "@/lib/ai/prompts/task-decomposition";
+} from "@/lib/ai/features/generate-subtask/constants";
 import {
   assessmentToolInputSchema,
   assessmentToolOutputSchema,
@@ -27,7 +29,7 @@ import {
   type DecompositionPreviewResponse,
   type GenerateSubtasksToolInput,
   type GenerateSubtasksToolOutput,
-} from "@/lib/ai/schemas/task-decomposition";
+} from "@/lib/validation/task-decomposition.schemas";
 import { TaskDecompositionError } from "@/services/task-decomposition.errors";
 
 type TaskDraftInput = {
@@ -567,15 +569,15 @@ const decompositionLoopPlan: ReadonlyArray<{
   expectedToolName: TaskDecompositionToolName;
   toolChoice: ToolChoiceFunction;
 }> = [
-  {
-    expectedToolName: ASSESS_TASK_DECOMPOSITION_TOOL_NAME,
-    toolChoice: forcedAssessmentToolChoice,
-  },
-  {
-    expectedToolName: GENERATE_SUBTASKS_TOOL_NAME,
-    toolChoice: forcedGenerationToolChoice,
-  },
-];
+    {
+      expectedToolName: ASSESS_TASK_DECOMPOSITION_TOOL_NAME,
+      toolChoice: forcedAssessmentToolChoice,
+    },
+    {
+      expectedToolName: GENERATE_SUBTASKS_TOOL_NAME,
+      toolChoice: forcedGenerationToolChoice,
+    },
+  ];
 
 export class TaskDecompositionAgent {
   async preview(input: {

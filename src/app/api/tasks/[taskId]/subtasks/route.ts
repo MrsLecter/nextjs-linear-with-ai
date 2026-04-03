@@ -5,7 +5,7 @@ import {
   createSubtasksInputSchema,
   createSubtasksRequestBodySchema,
   createSubtasksResponseSchema,
-} from "@/lib/ai/schemas/task-decomposition";
+} from "@/lib/validation/task-decomposition.schemas";
 import { taskIdParamSchema } from "@/lib/validation/task.schemas";
 import {
   createTaskSubtasks,
