@@ -329,7 +329,6 @@ export function PrioritizationModal({
     hasRequestedRecommendation && !isLoading && !data && !error;
 
   const handleRetry = () => {
-    setHasRequestedRecommendation(true);
     void runPrioritization(tasks);
   };
 

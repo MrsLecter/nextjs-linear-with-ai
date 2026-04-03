@@ -70,16 +70,22 @@ export async function POST(request: Request) {
     }
 
     if (isTaskDecompositionError(error)) {
-      console.error("Task decomposition preview service error:", error.code, error.message);
+      const serviceError = error;
+
+      console.error(
+        "Task decomposition preview service error:",
+        serviceError.code,
+        serviceError.message,
+      );
 
       return NextResponse.json(
         {
-          error: error.statusCode >= 500
+          error: serviceError.statusCode >= 500
             ? "Failed to generate subtask preview."
-            : error.message,
-          code: error.code,
+            : serviceError.message,
+          code: serviceError.code,
         },
-        { status: error.statusCode },
+        { status: serviceError.statusCode },
       );
     }
 

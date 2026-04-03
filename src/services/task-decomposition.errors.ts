@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI, { APIError } from "openai";
 
 export class TaskDecompositionError extends Error {
   readonly statusCode: number;
@@ -18,6 +18,6 @@ export function isTaskDecompositionError(
   return error instanceof TaskDecompositionError;
 }
 
-export function isOpenAIErrorWithStatus(error: unknown): error is OpenAI.APIError {
+export function isOpenAIErrorWithStatus(error: unknown): error is APIError {
   return error instanceof OpenAI.APIError;
 }

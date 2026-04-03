@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -39,17 +39,6 @@ export function TaskModal({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isUnsavedChangesModalOpen, setIsUnsavedChangesModalOpen] = useState(false);
   const [pendingTaskToOpen, setPendingTaskToOpen] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setModalTask(task ?? null);
-    setHasUnsavedChanges(false);
-    setIsUnsavedChangesModalOpen(false);
-    setPendingTaskToOpen(null);
-  }, [open, task, mode]);
 
   const initialValues = useMemo<TaskFormInput>(() => {
     if (!modalTask) {
@@ -117,15 +106,14 @@ export function TaskModal({
       return result;
     }
 
-    setModalTask({
-      ...result.task,
-      parentTask: result.task.parentTask ?? modalTask?.parentTask ?? null,
-    });
     setHasUnsavedChanges(false);
-
     if (hadTaskId) {
-      onClose();
+      setModalTask({
+        ...result.task,
+        parentTask: result.task.parentTask ?? modalTask?.parentTask ?? null,
+      });
     }
+    onClose();
 
     return result;
   };
@@ -149,13 +137,23 @@ export function TaskModal({
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
                 This task is a subtask
               </p>
+              {(() => {
+                const parentTask = modalTask.parentTask;
+
+                if (!parentTask) {
+                  return null;
+                }
+
+                return (
               <button
                 className="mt-2 text-left text-sm font-medium text-blue-300 transition hover:text-blue-200 hover:underline"
-                onClick={() => handleOpenTask(modalTask.parentTask.id)}
+                onClick={() => handleOpenTask(parentTask.id)}
                 type="button"
               >
-                Parent task: {modalTask.parentTask.title}
+                Parent task: {parentTask.title}
               </button>
+                );
+              })()}
             </div>
           ) : null}
         </div>
