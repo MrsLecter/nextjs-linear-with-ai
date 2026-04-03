@@ -25,15 +25,15 @@ enum TaskPriority {
 }
 
 model Task {
-  id          Int          @id @default(autoincrement())
-  title       String       @unique
-  description String
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  createdAt   DateTime     @default(now())
+  id           Int          @id @default(autoincrement())
+  title        String       @unique
+  description  String
+  status       TaskStatus   @default(TODO)
+  priority     TaskPriority @default(MEDIUM)
+  createdAt    DateTime     @default(now())
   parentTaskId Int?
-  parentTask   Task?       @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
-  subtasks     Task[]      @relation("TaskSubtasks")
+  parentTask   Task?        @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  subtasks     Task[]       @relation("TaskSubtasks")
 
   @@index([parentTaskId])
   @@map("tasks")
