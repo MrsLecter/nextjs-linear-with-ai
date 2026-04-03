@@ -2,8 +2,8 @@ import type {
   Response,
   ResponseCreateParamsNonStreaming,
   ResponseFunctionToolCall,
-  ResponseFunctionToolCallOutputItem,
   ResponseInput,
+  ResponseInputItem,
   ToolChoiceFunction,
 } from "openai/resources/responses/responses";
 import { clientOpenAI } from "@/lib/ai/openai";
@@ -314,13 +314,11 @@ function buildSubtaskGenerationPrompt(input: GenerateSubtasksToolInput): string 
 function buildToolOutputItem(
   callId: string,
   output: unknown,
-): ResponseFunctionToolCallOutputItem {
+): ResponseInputItem.FunctionCallOutput {
   return {
-    id: crypto.randomUUID(),
     type: "function_call_output",
     call_id: callId,
     output: JSON.stringify(output),
-    status: "completed",
   };
 }
 
