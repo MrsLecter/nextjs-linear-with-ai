@@ -14,7 +14,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   usePrioritization,
   type PrioritizationData,
-} from "@/hooks/use-prioritization";
+} from "@/hooks/usePrioritization";
 import { cx } from "@/lib/helpers";
 import { getPrioritizationTasksSignature } from "@/lib/utils/prioritization-cache";
 
