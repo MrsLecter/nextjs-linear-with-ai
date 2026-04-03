@@ -133,7 +133,7 @@ When creating or editing a task, the app can:
 
 Implementation entrypoints:
 
-- `POST /api/tasks/decompose-preview`
+- `POST /api/ai/decompose-preview`
 - `POST /api/tasks/[taskId]/subtasks`
 
 ## Main User Flows

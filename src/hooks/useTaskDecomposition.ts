@@ -14,37 +14,37 @@ import {
 
 type DecompositionState =
   | {
-      status: "idle";
-      data: null;
-      error: null;
-      saveStatus: "idle";
-      saveError: null;
-      saveSuccessMessage: null;
-    }
+    status: "idle";
+    data: null;
+    error: null;
+    saveStatus: "idle";
+    saveError: null;
+    saveSuccessMessage: null;
+  }
   | {
-      status: "loading";
-      data: null;
-      error: null;
-      saveStatus: "idle";
-      saveError: null;
-      saveSuccessMessage: null;
-    }
+    status: "loading";
+    data: null;
+    error: null;
+    saveStatus: "idle";
+    saveError: null;
+    saveSuccessMessage: null;
+  }
   | {
-      status: "error";
-      data: null;
-      error: string;
-      saveStatus: "idle";
-      saveError: null;
-      saveSuccessMessage: null;
-    }
+    status: "error";
+    data: null;
+    error: string;
+    saveStatus: "idle";
+    saveError: null;
+    saveSuccessMessage: null;
+  }
   | {
-      status: DecompositionPreviewResult["status"];
-      data: DecompositionPreviewResult;
-      error: null;
-      saveStatus: "idle" | "saving" | "success" | "error";
-      saveError: string | null;
-      saveSuccessMessage: string | null;
-    };
+    status: DecompositionPreviewResult["status"];
+    data: DecompositionPreviewResult;
+    error: null;
+    saveStatus: "idle" | "saving" | "success" | "error";
+    saveError: string | null;
+    saveSuccessMessage: string | null;
+  };
 
 type GeneratePreviewSuccessResponse = {
   data: unknown;
@@ -134,7 +134,7 @@ export function useTaskDecomposition(taskId: number | null) {
 
       try {
         const parsedDraft = decompositionPreviewRequestSchema.parse(draft);
-        const response = await fetch("/api/tasks/decompose-preview", {
+        const response = await fetch("/api/ai/decompose-preview", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

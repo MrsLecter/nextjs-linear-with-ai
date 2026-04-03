@@ -191,6 +191,9 @@ function SuccessState({
                             Task ID: {alternative.taskId}
                           </p>
                         </div>
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                          Explanation
+                        </p>
                         <p className="break-words text-sm leading-7 text-slate-400">
                           {alternative.whyNotFirst}
                         </p>
@@ -242,6 +245,9 @@ function SuccessState({
                       Task ID: {prerequisite.taskId}
                     </p>
                   </div>
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                    Explanation
+                  </p>
                   <p className="mt-3 break-words text-sm leading-7 text-slate-300">
                     {prerequisite.reason}
                   </p>

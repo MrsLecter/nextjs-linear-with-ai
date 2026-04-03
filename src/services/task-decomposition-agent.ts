@@ -1,5 +1,6 @@
 import type {
   Response,
+  ResponseCreateParamsNonStreaming,
   ResponseFunctionToolCall,
   ResponseFunctionToolCallOutputItem,
   ResponseInput,
@@ -18,7 +19,6 @@ import {
 import {
   assessmentToolInputSchema,
   assessmentToolOutputSchema,
-  decompositionPreviewRequestSchema,
   decompositionPreviewResponseSchema,
   generateSubtasksToolInputSchema,
   generateSubtasksToolOutputSchema,
@@ -30,7 +30,15 @@ import {
 } from "@/lib/ai/schemas/task-decomposition";
 import { TaskDecompositionError } from "@/services/task-decomposition.errors";
 
-type TaskDraftInput = Pick<GenerateSubtasksToolInput, "title" | "description" | "maxSubtasks">;
+type TaskDraftInput = {
+  title: string;
+  description: string;
+  maxSubtasks: number;
+};
+type ReadyAssessmentOutput = {
+  status: "ready";
+  reason: string;
+};
 type TaskDecompositionToolName =
   | typeof ASSESS_TASK_DECOMPOSITION_TOOL_NAME
   | typeof GENERATE_SUBTASKS_TOOL_NAME;
@@ -226,7 +234,7 @@ function normalizeAssessmentResult(
 }
 
 function normalizeReadyResult(
-  assessment: Extract<AssessmentToolOutput, { status: "ready" }>,
+  assessment: ReadyAssessmentOutput,
   generated: GenerateSubtasksToolOutput,
 ): DecompositionPreviewResponse {
   const normalizedSubtasks = generateSubtasksToolOutputSchema.parse({
@@ -270,18 +278,20 @@ async function createAgentResponse(params: {
   previousResponseId?: string;
   toolChoice: ToolChoiceFunction;
 }): Promise<Response> {
+  const request: ResponseCreateParamsNonStreaming = {
+    model: TASK_DECOMPOSITION_MODEL,
+    instructions: TASK_DECOMPOSITION_AGENT_SYSTEM_PROMPT,
+    input: params.input,
+    previous_response_id: params.previousResponseId,
+    tools: [...taskDecompositionTools],
+    tool_choice: params.toolChoice,
+    parallel_tool_calls: false,
+    max_output_tokens: 500,
+    stream: false,
+  };
+
   return withTimeout(
-    clientOpenAI.responses.create({
-      model: TASK_DECOMPOSITION_MODEL,
-      instructions: TASK_DECOMPOSITION_AGENT_SYSTEM_PROMPT,
-      input: params.input,
-      previous_response_id: params.previousResponseId,
-      tools: [...taskDecompositionTools],
-      tool_choice: params.toolChoice,
-      parallel_tool_calls: false,
-      max_tool_calls: 1,
-      max_output_tokens: 500,
-    }),
+    clientOpenAI.responses.create(request),
     TASK_DECOMPOSITION_TIMEOUT_MS,
   );
 }
@@ -306,11 +316,26 @@ function buildToolOutputItem(
   output: unknown,
 ): ResponseFunctionToolCallOutputItem {
   return {
+    id: crypto.randomUUID(),
     type: "function_call_output",
     call_id: callId,
     output: JSON.stringify(output),
     status: "completed",
   };
+}
+
+function assertReadyAssessment(
+  assessment: AssessmentToolOutput | null,
+): asserts assessment is ReadyAssessmentOutput {
+  if (!assessment || assessment.status !== "ready") {
+    throw new TaskDecompositionError(
+      "Model attempted to generate subtasks before a ready assessment.",
+      {
+        statusCode: 502,
+        code: "generate_before_ready_assessment",
+      },
+    );
+  }
 }
 
 async function runAssessmentTool(
@@ -463,15 +488,7 @@ async function dispatchToolCall(params: {
         );
       }
 
-      if (state.assessment.status !== "ready") {
-        throw new TaskDecompositionError(
-          "Model attempted to generate subtasks before a ready assessment.",
-          {
-            statusCode: 502,
-            code: "generate_before_ready_assessment",
-          },
-        );
-      }
+      assertReadyAssessment(state.assessment);
 
       if (state.generatedSubtasks) {
         throw new TaskDecompositionError(
@@ -568,7 +585,7 @@ export class TaskDecompositionAgent {
     description: string;
     maxSubtasks?: number;
   }): Promise<DecompositionPreviewResponse> {
-    const draft = decompositionPreviewRequestSchema.parse({
+    const draft = generateSubtasksToolInputSchema.parse({
       ...input,
       maxSubtasks: input.maxSubtasks ?? DEFAULT_MAX_SUBTASKS,
     });

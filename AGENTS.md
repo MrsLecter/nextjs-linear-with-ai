@@ -44,7 +44,7 @@ prisma/
 - `src/app/page.tsx`: main task dashboard entrypoint
 - `src/app/actions/task.actions.ts`: server actions for task mutations
 - `src/app/api/ai/prioritize/route.ts`: AI prioritization endpoint
-- `src/app/api/tasks/decompose-preview/route.ts`: subtask preview generation endpoint
+- `src/app/api/ai/decompose-preview/route.ts`: AI subtask preview generation endpoint
 - `src/app/api/tasks/[taskId]/subtasks/route.ts`: persisted subtask creation endpoint
 - `src/services/task.service.ts`: task CRUD and subtask persistence
 - `src/services/prioritization.service.ts`: prioritization orchestration

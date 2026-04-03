@@ -162,7 +162,7 @@ export function TaskModal({
       <TaskForm
         key={formKey}
         createdAt={modalTask?.createdAt}
-        enableSubtaskGeneration
+        enableSubtaskGeneration={!isCreateMode}
         initialValues={initialValues}
         taskId={modalTask?.id}
         submitLabel={confirmLabel}
