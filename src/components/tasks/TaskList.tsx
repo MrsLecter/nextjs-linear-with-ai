@@ -1,10 +1,10 @@
-import type { Task } from "#prisma/browser";
 import { TaskCard } from "@/components/tasks/TaskCard";
+import type { TaskWithParent } from "@/lib/types/task.types";
 
 type TaskListProps = {
-  tasks: Task[];
-  onEdit: (task: Task) => void;
-  onDelete: (task: Task) => void;
+  tasks: TaskWithParent[];
+  onEdit: (task: TaskWithParent) => void;
+  onDelete: (task: TaskWithParent) => void;
 };
 
 export function TaskList({ tasks, onEdit, onDelete }: TaskListProps) {

@@ -1,14 +1,15 @@
 import { Trash2 } from "lucide-react";
-import { TaskStatus, type Task } from "#prisma/browser";
+import { TaskStatus } from "#prisma/browser";
 import { Button } from "@/components/ui/Button";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cx } from "@/lib/helpers";
+import type { TaskWithParent } from "@/lib/types/task.types";
 import { getPriorityMeta, getStatusMeta } from "@/lib/utils/task.utils";
 
 type TaskCardProps = {
-  task: Task;
-  onEdit: (task: Task) => void;
-  onDelete: (task: Task) => void;
+  task: TaskWithParent;
+  onEdit: (task: TaskWithParent) => void;
+  onDelete: (task: TaskWithParent) => void;
 };
 
 export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
@@ -49,6 +50,7 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
             <div className="min-w-0">
               <div className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
                 Task ID: {task.id}
+                {task.parentTaskId ? " • Subtask" : ""}
               </div>
               <div className="truncate text-sm font-semibold text-slate-50">
                 {task.title}

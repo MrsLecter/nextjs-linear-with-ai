@@ -5,19 +5,20 @@ import { useRouter } from "next/navigation";
 import {
   createTaskAction,
   deleteTaskAction,
+  getTaskByIdAction,
   updateTaskAction,
 } from "@/app/actions/task.actions";
-import type { Task } from "#prisma/browser";
 import { ERROR_MESSAGES } from "@/lib/constants/ui.constants";
 import type { TaskMutationResult } from "@/lib/types/task-mutation.types";
+import type { TaskWithParent } from "@/lib/types/task.types";
 import type { TaskFormInput } from "@/lib/validation/task.schemas";
 
 export function useTaskMutations() {
   const router = useRouter();
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskWithParent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [taskPendingDeletion, setTaskPendingDeletion] = useState<Task | null>(null);
+  const [taskPendingDeletion, setTaskPendingDeletion] = useState<TaskWithParent | null>(null);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -27,7 +28,19 @@ export function useTaskMutations() {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (task: Task) => {
+  const openEditModal = (task: TaskWithParent) => {
+    setModalMode("edit");
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const openTaskById = async (taskId: number) => {
+    const task = await getTaskByIdAction(taskId);
+
+    if (!task) {
+      return;
+    }
+
     setModalMode("edit");
     setSelectedTask(task);
     setIsModalOpen(true);
@@ -40,33 +53,28 @@ export function useTaskMutations() {
 
   const saveTask = async (
     values: TaskFormInput,
+    taskId?: number,
   ): Promise<TaskMutationResult> => {
-    if (modalMode === "edit" && selectedTask) {
-      const result = await updateTaskAction(selectedTask.id, values);
+    if (taskId) {
+      const result = await updateTaskAction(taskId, values);
 
-      if (!result.success) {
-        return result;
+      if (result.success) {
+        router.refresh();
       }
-
-      closeModal();
-      router.refresh();
 
       return result;
     }
 
     const result = await createTaskAction(values);
 
-    if (!result.success) {
-      return result;
+    if (result.success) {
+      router.refresh();
     }
-
-    closeModal();
-    router.refresh();
 
     return result;
   };
 
-  const requestDeleteTask = (task: Task) => {
+  const requestDeleteTask = (task: TaskWithParent) => {
     setDeleteError(null);
     setTaskPendingDeletion(task);
   };
@@ -115,6 +123,7 @@ export function useTaskMutations() {
     isModalOpen,
     openCreateModal,
     openEditModal,
+    openTaskById,
     closeModal,
     saveTask,
     taskPendingDeletion,

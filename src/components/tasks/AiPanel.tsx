@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Bot, Sparkles } from "lucide-react";
+import { Bot } from "lucide-react";
 import type { Task } from "#prisma/browser";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PrioritizeButton } from "@/components/tasks/PrioritizeButton";
 
@@ -42,13 +41,6 @@ export function AiPanel({ tasks, onOpenTask }: AiPanelProps) {
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Button
-              className="w-full justify-center border-blue-500/30 bg-blue-500/10 text-blue-100 hover:border-blue-400/40 hover:bg-blue-500/15 hover:text-white sm:w-auto"
-              leadingIcon={<Sparkles className="size-4" />}
-              variant="ghost"
-            >
-              Summarize backlog
-            </Button>
             <PrioritizeButton
               onClick={() => {
                 setIsPrioritizationOpen(true);

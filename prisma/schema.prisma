@@ -31,6 +31,10 @@ model Task {
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   createdAt   DateTime     @default(now())
+  parentTaskId Int?
+  parentTask   Task?       @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  subtasks     Task[]      @relation("TaskSubtasks")
 
+  @@index([parentTaskId])
   @@map("tasks")
 }

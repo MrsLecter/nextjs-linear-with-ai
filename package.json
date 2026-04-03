@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "prisma:seed:priority": "npx prisma db seed -- --prioritization",
+    "prisma:seed:decomposition": "npx prisma db seed -- --decomposition",
     "prisma:seed:clear": "npx prisma db seed -- --clear",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",

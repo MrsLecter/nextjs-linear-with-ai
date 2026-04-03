@@ -79,7 +79,7 @@ export const PRIORITY_OPTIONS: Array<{
     },
   ];
 
-export type TaskFormValues = Omit<Task, "id" | "createdAt">;
+export type TaskFormValues = Omit<Task, "id" | "createdAt" | "parentTaskId">;
 
 export const EMPTY_TASK_VALUES: TaskFormValues = {
   title: "",

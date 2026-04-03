@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -167,32 +167,38 @@ function SuccessState({
 
           <div className="space-y-4">
             {alternatives.map((alternative) => (
-              <TaskCard
-                hint={alternative.task && onOpenTask ? "Open task" : undefined}
-                key={alternative.taskId}
-                onClick={
-                  alternative.task && onOpenTask
-                    ? () => onOpenTask(alternative.task)
-                    : undefined
-                }
-                title={getTaskLabel(alternative.taskId, alternative.task)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-slate-300">
-                    <CornerDownRight className="size-4" />
-                  </div>
-                  <div className="min-w-0 space-y-3">
-                    <div className="space-y-1">
-                      <p className="text-xs text-slate-500">
-                        Task ID: {alternative.taskId}
-                      </p>
+              (() => {
+                const alternativeTask = alternative.task;
+
+                return (
+                  <TaskCard
+                    hint={alternativeTask && onOpenTask ? "Open task" : undefined}
+                    key={alternative.taskId}
+                    onClick={
+                      alternativeTask && onOpenTask
+                        ? () => onOpenTask(alternativeTask)
+                        : undefined
+                    }
+                    title={getTaskLabel(alternative.taskId, alternativeTask)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-slate-300">
+                        <CornerDownRight className="size-4" />
+                      </div>
+                      <div className="min-w-0 space-y-3">
+                        <div className="space-y-1">
+                          <p className="text-xs text-slate-500">
+                            Task ID: {alternative.taskId}
+                          </p>
+                        </div>
+                        <p className="break-words text-sm leading-7 text-slate-400">
+                          {alternative.whyNotFirst}
+                        </p>
+                      </div>
                     </div>
-                    <p className="break-words text-sm leading-7 text-slate-400">
-                      {alternative.whyNotFirst}
-                    </p>
-                  </div>
-                </div>
-              </TaskCard>
+                  </TaskCard>
+                );
+              })()
             ))}
           </div>
         </section>
@@ -216,26 +222,32 @@ function SuccessState({
           </div>
 
           {possiblePrerequisites.map((prerequisite) => (
-            <TaskCard
-              borderClassName="border-amber-500/15"
-              hint={prerequisite.task && onOpenTask ? "Open task" : undefined}
-              key={prerequisite.taskId}
-              onClick={
-                prerequisite.task && onOpenTask
-                  ? () => onOpenTask(prerequisite.task)
-                  : undefined
-              }
-              title={getTaskLabel(prerequisite.taskId, prerequisite.task)}
-            >
-              <div className="space-y-1">
-                <p className="text-xs text-slate-500">
-                  Task ID: {prerequisite.taskId}
-                </p>
-              </div>
-              <p className="mt-3 break-words text-sm leading-7 text-slate-300">
-                {prerequisite.reason}
-              </p>
-            </TaskCard>
+            (() => {
+              const prerequisiteTask = prerequisite.task;
+
+              return (
+                <TaskCard
+                  borderClassName="border-amber-500/15"
+                  hint={prerequisiteTask && onOpenTask ? "Open task" : undefined}
+                  key={prerequisite.taskId}
+                  onClick={
+                    prerequisiteTask && onOpenTask
+                      ? () => onOpenTask(prerequisiteTask)
+                      : undefined
+                  }
+                  title={getTaskLabel(prerequisite.taskId, prerequisiteTask)}
+                >
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">
+                      Task ID: {prerequisite.taskId}
+                    </p>
+                  </div>
+                  <p className="mt-3 break-words text-sm leading-7 text-slate-300">
+                    {prerequisite.reason}
+                  </p>
+                </TaskCard>
+              );
+            })()
           ))}
         </section>
       ) : null}
@@ -294,8 +306,7 @@ export function PrioritizationModal({
     runPrioritization,
     cancelPrioritization,
   } = usePrioritization();
-  const [hasRequestedRecommendation, setHasRequestedRecommendation] =
-    useState(false);
+  const hasRequestedRecommendation = open;
   const tasksSignature = getPrioritizationTasksSignature(tasks);
 
   useEffect(() => {
@@ -304,7 +315,6 @@ export function PrioritizationModal({
       return;
     }
 
-    setHasRequestedRecommendation(true);
     void runPrioritization(tasks);
   }, [cancelPrioritization, open, runPrioritization, tasks, tasksSignature]);
 

@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { Task, TaskPriority, TaskStatus } from "#prisma/browser";
+import type { TaskPriority, TaskStatus } from "#prisma/browser";
 import { Header } from "@/components/layout/Header";
 import { useTaskFilters } from "@/hooks/useTaskFilters";
 import { useTaskMutations } from "@/hooks/useTaskMutations";
+import type { TaskWithParent } from "@/lib/types/task.types";
 import { AiPanel } from "@/components/tasks/AiPanel";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskToolbar } from "@/components/tasks/TaskToolbar";
@@ -25,7 +26,7 @@ const ConfirmationModal = dynamic(() =>
 );
 
 type TaskDashboardProps = {
-  initialTasks: Task[];
+  initialTasks: TaskWithParent[];
   activeStatus: TaskStatus | null;
   prioritySort: TaskPriority;
   dateSort: TaskDateSortDirection;
@@ -49,6 +50,7 @@ export function TaskDashboard({
     openCreateModal,
     openEditModal,
     closeModal,
+    openTaskById,
     saveTask,
     taskPendingDeletion,
     isDeletingTask,
@@ -92,6 +94,7 @@ export function TaskDashboard({
         mode={modalMode}
         task={selectedTask}
         onClose={closeModal}
+        onOpenTask={openTaskById}
         onSave={saveTask}
         onDelete={requestDeleteTask}
       />

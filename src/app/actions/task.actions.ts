@@ -6,12 +6,14 @@ import { Prisma } from "#prisma/client";
 import {
   createTask,
   deleteTask,
+  getTaskById,
   updateTask,
 } from "@/services/task.service";
 import {
   createTaskSchema,
   deleteTaskSchema,
   taskFormSchema,
+  taskIdParamSchema,
   type TaskFormInput,
 } from "@/lib/validation/task.schemas";
 import {
@@ -93,6 +95,16 @@ export async function createTaskAction(
       ...getMutationError(error, ERROR_MESSAGES.CREATE_TASK_FAILED),
     };
   }
+}
+
+export async function getTaskByIdAction(id: number) {
+  const parsedId = taskIdParamSchema.safeParse({ id });
+
+  if (!parsedId.success) {
+    return null;
+  }
+
+  return getTaskById(parsedId.data.id);
 }
 
 export async function updateTaskAction(

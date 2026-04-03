@@ -1,6 +1,6 @@
 import prisma from "@/lib/db/prisma";
 import { seedTaskPrioritizationTest } from './seeds/prioritization.seed'
-
+import { seedTaskDecompositionTest } from './seeds/decomposition.seed'
 
 async function main() {
   const args = process.argv.slice(2);
@@ -12,6 +12,10 @@ async function main() {
 
   if (args.includes('--prioritization')) {
     await seedTaskPrioritizationTest(prisma)
+  }
+
+  if (args.includes('--decomposition')) {
+    await seedTaskDecompositionTest(prisma)
   }
 
   if (args.includes('--clear')) {
