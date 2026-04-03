@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import type { ZodIssue } from "zod";
 import { Prisma } from "#prisma/client";
 import {
@@ -82,7 +81,6 @@ export async function createTaskAction(
 
   try {
     const task = await createTask(parsedInput.data);
-    revalidatePath("/");
 
     return {
       success: true,
@@ -130,8 +128,6 @@ export async function updateTaskAction(
       };
     }
 
-    revalidatePath("/");
-
     return {
       success: true,
       task,
@@ -166,8 +162,6 @@ export async function deleteTaskAction(
         formError: ERROR_MESSAGES.TASK_NOT_FOUND,
       };
     }
-
-    revalidatePath("/");
 
     return {
       success: true,

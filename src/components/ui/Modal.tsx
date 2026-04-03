@@ -17,6 +17,35 @@ type ModalProps = {
   closeDisabled?: boolean;
 };
 
+let activeBodyScrollLocks = 0;
+let bodyOriginalOverflow: string | null = null;
+
+function lockBodyScroll() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  if (activeBodyScrollLocks === 0) {
+    bodyOriginalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+  }
+
+  activeBodyScrollLocks += 1;
+}
+
+function unlockBodyScroll() {
+  if (typeof document === "undefined" || activeBodyScrollLocks === 0) {
+    return;
+  }
+
+  activeBodyScrollLocks -= 1;
+
+  if (activeBodyScrollLocks === 0) {
+    document.body.style.overflow = bodyOriginalOverflow ?? "";
+    bodyOriginalOverflow = null;
+  }
+}
+
 function getFocusableElements(container: HTMLElement) {
   return Array.from(
     container.querySelectorAll<HTMLElement>(
@@ -74,15 +103,14 @@ export function Modal({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
 
     if (dialogElement) {
       getInitialFocusElement(dialogElement).focus();
     }
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      unlockBodyScroll();
       previousActiveElement?.focus();
     };
   }, [open]);
