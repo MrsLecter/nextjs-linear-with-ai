@@ -11,13 +11,13 @@ import {
   TASK_DECOMPOSITION_AGENT_SYSTEM_PROMPT,
   TASK_DECOMPOSITION_ASSESSMENT_SYSTEM_PROMPT,
   TASK_DECOMPOSITION_GENERATION_SYSTEM_PROMPT,
-} from "@/lib/ai/features/generate-subtask/prompts";
+} from "@/lib/ai/features/task-decomposition/prompts";
 import {
   ASSESS_TASK_DECOMPOSITION_TOOL_NAME,
   GENERATE_SUBTASKS_TOOL_NAME,
   TASK_DECOMPOSITION_MODEL,
   TASK_DECOMPOSITION_TIMEOUT_MS,
-} from "@/lib/ai/features/generate-subtask/constants";
+} from "@/lib/ai/features/task-decomposition/constants";
 import {
   assessmentToolInputSchema,
   assessmentToolOutputSchema,

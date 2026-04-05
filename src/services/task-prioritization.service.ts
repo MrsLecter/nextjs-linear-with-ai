@@ -2,14 +2,18 @@ import type { Task } from "#prisma/client";
 import { TaskStatus } from "#prisma/browser";
 import { z } from "zod";
 import { clientOpenAI } from "@/lib/ai/openai";
-import { calculateTaskScore } from "@/lib/ai/features/suggest-next-task/utils";
+import { calculateTaskScore } from "@/lib/ai/features/task-prioritization/utils";
 import {
   getPrioritizationTasksSignature,
   PRIORITIZATION_SERVER_CACHE_TTL_MS,
 } from "@/lib/utils/prioritization-cache";
 import { listTasks } from "@/services/task.service";
-import { PRIORITIZATION_SYSTEM_PROMPT } from "@/lib/ai/features/suggest-next-task/prompts";
-import { PRIORITIZATION_MODEL, PRIORITIZATION_TIMEOUT_MS } from "@/lib/ai/features/suggest-next-task/constants";
+import {
+  buildPrioritizationUserPrompt,
+  PRIORITIZATION_SYSTEM_PROMPT,
+  type PrioritizationPromptTaskInput,
+} from "@/lib/ai/features/task-prioritization/prompts";
+import { PRIORITIZATION_MODEL, PRIORITIZATION_TIMEOUT_MS } from "@/lib/ai/features/task-prioritization/constants";
 
 const prioritizationResponseSchema = z
   .object({
@@ -55,16 +59,6 @@ export type PrioritizationResult = {
     taskId: number;
     reason: string;
   }[];
-};
-
-type CompactTaskInput = {
-  id: string;
-  title: ScoredTask["title"];
-  description: ScoredTask["description"];
-  status: ScoredTask["status"];
-  priority: ScoredTask["priority"];
-  createdAt: string;
-  baselineScore: number;
 };
 
 type PrioritizationModelResponse = z.infer<
@@ -144,7 +138,7 @@ function setCachedPrioritizationResult(
   });
 }
 
-function buildModelInput(tasks: ScoredTask[]): CompactTaskInput[] {
+function buildModelInput(tasks: ScoredTask[]): PrioritizationPromptTaskInput[] {
   return tasks.map((task) => ({
     id: String(task.id),
     title: task.title,
@@ -154,64 +148,6 @@ function buildModelInput(tasks: ScoredTask[]): CompactTaskInput[] {
     createdAt: task.createdAt.toISOString(),
     baselineScore: task.baselineScore,
   }));
-}
-
-function buildUserPrompt(tasks: CompactTaskInput[]): string {
-  return [
-    "Choose one primary next task to work on right now.",
-    "",
-    "Use all provided fields, but prioritize based mainly on title and description.",
-    "",
-    "Primary evaluation criteria from title and description:",
-    "- urgency",
-    "- blocker signals",
-    "- customer or business impact",
-    "- production or release risk",
-    "- actionability and specificity",
-    "- whether the task describes a concrete problem or consequence",
-    "",
-    "Secondary supporting signals:",
-    "- baselineScore",
-    "- priority",
-    "- status",
-    "- task age",
-    "",
-    "Decision rules:",
-    '- never choose a task with status = "done"',
-    "- treat title and description as the main source of real importance",
-    "- use baselineScore as a supporting signal and tie-breaker",
-    "- prefer concrete and actionable tasks over vague tasks when importance is otherwise close",
-    '- prefer "todo" over "in-progress" when the semantic importance is close',
-    '- do not treat words like "urgent", "critical", or "asap" as sufficient by themselves',
-    "- if a task appears highly important but may plausibly depend on another shortlisted task, prefer the task that more directly unblocks execution or release flow",
-    "- do not assume hidden dependencies as facts",
-    "- when dependency is uncertain from the provided fields, reflect that uncertainty in alternatives or possiblePrerequisites",
-    "",
-    "Return JSON with exactly this shape:",
-    '{ "primaryTaskId": "string", "primaryTaskTitle": "string", "explanation": "string", "alternatives": [{ "taskId": "string", "whyNotFirst": "string" }], "possiblePrerequisites": [{ "taskId": "string", "reason": "string" }] }',
-    "",
-    "Explanation requirements:",
-    "- 1-3 sentences",
-    "- concise",
-    "- specific",
-    "- grounded only in the input data",
-    "- mention the strongest reason or two for why this task is first now",
-    "",
-    "Alternatives requirements:",
-    "- include up to 2 viable alternative tasks",
-    "- explain briefly why each is not first",
-    "- do not include the primary task",
-    "",
-    "Possible prerequisite requirements:",
-    "- include at most 1 task",
-    "- only include it if a prerequisite relationship seems plausible from the provided fields",
-    '- do not present uncertain dependencies as facts; use wording like "may unblock" or "could be needed first" when appropriate',
-    "- do not include the primary task",
-    "",
-    "Tasks:",
-    "",
-    JSON.stringify(tasks),
-  ].join("\n");
 }
 
 function toTaskIdKey(taskId: Task["id"] | string): string {
@@ -387,7 +323,7 @@ async function callPrioritizationModel(
   tasks: ScoredTask[],
 ): Promise<PrioritizationResult> {
   const candidateTasks = tasks.slice(0, 7);
-  const prompt = buildUserPrompt(buildModelInput(candidateTasks));
+  const prompt = buildPrioritizationUserPrompt(buildModelInput(candidateTasks));
 
   const response = await withTimeout(
     clientOpenAI.responses.create({

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPrioritizationRecommendation } from "@/services/prioritization.service";
+import { getPrioritizationRecommendation } from "@/services/task-prioritization.service";
 
 export const dynamic = "force-dynamic";
 

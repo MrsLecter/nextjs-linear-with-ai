@@ -2,7 +2,7 @@ import { TaskPriority, TaskStatus } from "#prisma/browser";
 import type {
   SuggestedNextTaskResult,
   SuggestedTaskCandidate,
-} from "@/lib/ai/features/suggest-next-task/types";
+} from "@/lib/ai/features/task-prioritization/types";
 import {
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,

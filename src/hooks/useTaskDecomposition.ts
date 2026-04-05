@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import type {
   DecompositionPreviewRequest,
   DecompositionPreviewResult,
-} from "@/lib/ai/features/generate-subtask/types";
+} from "@/lib/ai/features/task-decomposition/types";
 import {
   createSubtasksRequestBodySchema,
   createSubtasksResponseSchema,
