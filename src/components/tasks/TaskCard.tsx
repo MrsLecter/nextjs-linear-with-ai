@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Trash2, Triangle } from "lucide-react";
 import { TaskStatus } from "#prisma/browser";
 import { Button } from "@/components/ui/Button";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -17,6 +17,7 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const priority = getPriorityMeta(task.priority);
   const StatusIcon = status.icon;
   const PriorityIcon = priority.icon;
+  const estimation = task.estimation;
   const createdAtLabel = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -57,6 +58,17 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 text-xs font-medium">
+              {estimation !== null && estimation !== undefined ? (
+                <Tooltip content={`Estimate: ${estimation}`}>
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-700/80 bg-slate-950/90 px-2 py-1 text-slate-300">
+                    <Triangle
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0 fill-current text-slate-400"
+                    />
+                    <span>{estimation}</span>
+                  </span>
+                </Tooltip>
+              ) : null}
               <Tooltip content={`${priority.label} priority`}>
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-700/80 bg-slate-950/90 px-2 py-1 text-slate-300">
                   <PriorityIcon

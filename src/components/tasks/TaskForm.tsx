@@ -11,7 +11,11 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useTaskDecomposition } from "@/hooks/useTaskDecomposition";
-import { PRIORITY_OPTIONS, STATUS_OPTIONS } from "@/lib/constants/task.constants";
+import {
+  PRIORITY_OPTIONS,
+  STATUS_OPTIONS,
+  TASK_ESTIMATION_VALUES,
+} from "@/lib/constants/task.constants";
 import {
   ERROR_MESSAGES,
   LOADING_STATES,
@@ -126,6 +130,7 @@ export function TaskForm({
   const descriptionError = errors.description?.message;
   const statusError = errors.status?.message;
   const priorityError = errors.priority?.message;
+  const estimationError = errors.estimation?.message;
   const watchedTitle = useWatch({
     control,
     name: "title",
@@ -300,7 +305,7 @@ export function TaskForm({
         />
       </FormField>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <FormField error={statusError} label="Status">
           <Select
             aria-invalid={statusError ? "true" : "false"}
@@ -332,6 +337,26 @@ export function TaskForm({
             {PRIORITY_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+
+        <FormField error={estimationError} label="Estimation">
+          <Select
+            aria-invalid={estimationError ? "true" : "false"}
+            className={cx(
+              estimationError
+                ? "border-red-500 focus:border-red-500 focus:ring-red-500/25 hover:border-red-400"
+                : undefined,
+            )}
+            {...register("estimation", {
+              setValueAs: (value) => Number(value),
+            })}
+          >
+            {TASK_ESTIMATION_VALUES.map((value) => (
+              <option key={value} value={value}>
+                {value}
               </option>
             ))}
           </Select>

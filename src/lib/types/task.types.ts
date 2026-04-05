@@ -1,4 +1,5 @@
 import type { Task } from "#prisma/browser";
+import type { TaskEstimationValue } from "@/lib/constants/task.constants";
 
 export type ParentTaskSummary = {
   id: Task["id"];
@@ -6,5 +7,6 @@ export type ParentTaskSummary = {
 };
 
 export type TaskWithParent = Task & {
+  estimation?: TaskEstimationValue | null;
   parentTask?: ParentTaskSummary | null;
 };

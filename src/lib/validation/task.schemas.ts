@@ -1,16 +1,34 @@
 import { z } from "zod";
 import { TaskPriority, TaskStatus } from "#prisma/browser";
-import { TASK_DATE_SORT_DIRECTION_VALUES } from "@/lib/constants/task.constants";
+import {
+  TASK_DATE_SORT_DIRECTION_VALUES,
+  TASK_ESTIMATION_VALUES,
+} from "@/lib/constants/task.constants";
 
 export const taskStatusValues = Object.values(TaskStatus) as [TaskStatus, ...TaskStatus[]];
 export const taskPriorityValues = Object.values(TaskPriority) as [TaskPriority, ...TaskPriority[]];
+export const taskEstimationValues = [...TASK_ESTIMATION_VALUES] as [
+  (typeof TASK_ESTIMATION_VALUES)[number],
+  ...(typeof TASK_ESTIMATION_VALUES)[number][],
+];
 const taskDateSortDirectionSchema = z.enum(TASK_DATE_SORT_DIRECTION_VALUES);
+export const taskEstimationSchema = z.coerce
+  .number()
+  .refine(
+    (value): value is (typeof TASK_ESTIMATION_VALUES)[number] =>
+      taskEstimationValues.includes(value as (typeof TASK_ESTIMATION_VALUES)[number]),
+    {
+      message: "Estimation must be one of: 0, 1, 2, 3, 5, 8.",
+    },
+  )
+  .default(0);
 
 export const createTaskSchema = z.object({
   title: z.string().trim().min(1, "Title is required.").max(200, "Title is too long"),
   description: z.string().trim().min(1, "Description is required.").max(2000, "Description is too long"),
   status: z.enum(taskStatusValues).default(TaskStatus.TODO),
   priority: z.enum(taskPriorityValues).default(TaskPriority.MEDIUM),
+  estimation: taskEstimationSchema,
 });
 
 export const taskFormSchema = z.object({
@@ -18,6 +36,7 @@ export const taskFormSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(2000, "Description is too long"),
   status: z.enum(taskStatusValues).default(TaskStatus.TODO),
   priority: z.enum(taskPriorityValues).default(TaskPriority.MEDIUM),
+  estimation: taskEstimationSchema,
 });
 
 export const updateTaskSchema = z.object({
@@ -25,6 +44,7 @@ export const updateTaskSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(2000, "Description is too long").optional(),
   status: z.enum(taskStatusValues).optional(),
   priority: z.enum(taskPriorityValues).optional(),
+  estimation: taskEstimationSchema.optional(),
 });
 
 export const listTasksSchema = z.object({

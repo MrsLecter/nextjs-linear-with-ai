@@ -18,8 +18,10 @@ import type {
 } from "#prisma/browser";
 
 export const TASK_DATE_SORT_DIRECTION_VALUES = ["desc", "asc"] as const;
+export const TASK_ESTIMATION_VALUES = [0, 1, 2, 3, 5, 8] as const;
 export type TaskDateSortDirection =
   (typeof TASK_DATE_SORT_DIRECTION_VALUES)[number];
+export type TaskEstimationValue = (typeof TASK_ESTIMATION_VALUES)[number];
 export const DEFAULT_TASK_PRIORITY_SORT = PrismaTaskPriority.HIGH;
 export const DEFAULT_TASK_DATE_SORT_DIRECTION: TaskDateSortDirection = "desc";
 
@@ -79,11 +81,14 @@ export const PRIORITY_OPTIONS: Array<{
     },
   ];
 
-export type TaskFormValues = Omit<Task, "id" | "createdAt" | "parentTaskId">;
+export type TaskFormValues = Omit<Task, "id" | "createdAt" | "parentTaskId"> & {
+  estimation: TaskEstimationValue;
+};
 
 export const EMPTY_TASK_VALUES: TaskFormValues = {
   title: "",
   description: "",
   status: PrismaTaskStatus.TODO,
   priority: PrismaTaskPriority.MEDIUM,
+  estimation: 0,
 };

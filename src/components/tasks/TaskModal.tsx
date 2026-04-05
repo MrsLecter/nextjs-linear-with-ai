@@ -50,6 +50,7 @@ export function TaskModal({
       description: modalTask.description,
       status: modalTask.status,
       priority: modalTask.priority,
+      estimation: modalTask.estimation ?? 0,
     };
   }, [modalTask]);
 
