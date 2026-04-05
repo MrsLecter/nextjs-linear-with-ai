@@ -4,7 +4,7 @@ import {
   decompositionPreviewRequestSchema,
   decompositionPreviewResponseSchema,
 } from "@/lib/validation/task-decomposition.schemas";
-import { taskDecompositionAgent } from "@/services/task-decomposition-agent";
+import { taskDecompositionAgent } from "@/services/task-decomposition.orchestrator";
 import {
   isOpenAIErrorWithStatus,
   isTaskDecompositionError,
