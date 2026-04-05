@@ -212,7 +212,7 @@ export function Modal({
             </div>
             <button
               aria-label="Close modal"
-              className="inline-flex size-8 aspect-square items-center justify-center rounded-lg border border-slate-800 text-slate-400 transition-colors duration-150 hover:border-slate-700 hover:bg-slate-900 hover:text-slate-100 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
+              className="inline-flex size-8 aspect-square items-center justify-center rounded-lg border border-slate-800 text-slate-400 transition-colors duration-150 hover:cursor-pointer hover:border-slate-700 hover:bg-slate-900 hover:text-slate-100 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
               disabled={closeDisabled}
               onClick={handleClose}
               type="button"

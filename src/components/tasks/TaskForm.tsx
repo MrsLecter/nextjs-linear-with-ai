@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Bot } from "lucide-react";
 import type { FieldErrors, Resolver } from "react-hook-form";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { TaskDecompositionSection } from "@/components/tasks/TaskDecompositionSection";
+import { TaskEstimationSection } from "@/components/tasks/TaskEstimationSection";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
@@ -93,6 +94,16 @@ const taskFormResolver: Resolver<TaskFormInput> = async (values) => {
   };
 };
 
+function getTaskDraftSignature({
+  title,
+  description,
+}: Pick<TaskFormInput, "title" | "description">) {
+  return JSON.stringify({
+    title: title.trim(),
+    description: description.trim(),
+  });
+}
+
 export function TaskForm({
   taskId,
   createdAt,
@@ -121,8 +132,6 @@ export function TaskForm({
     reValidateMode: "onChange",
   });
   const [formError, setFormError] = useState<string | null>(null);
-  const [decompositionNotice, setDecompositionNotice] = useState<string | null>(null);
-  const [hasGeneratedPreview, setHasGeneratedPreview] = useState(false);
   const [lastGeneratedDraftSignature, setLastGeneratedDraftSignature] = useState<string | null>(null);
   const decomposition = useTaskDecomposition(taskId ?? null);
 
@@ -139,14 +148,22 @@ export function TaskForm({
     control,
     name: "description",
   });
+  const currentDraftSignature = useMemo(
+    () =>
+      getTaskDraftSignature({
+        title: watchedTitle ?? "",
+        description: watchedDescription ?? "",
+      }),
+    [watchedDescription, watchedTitle],
+  );
   const showDecompositionSection = enableSubtaskGeneration;
-  const { resetDecomposition } = decomposition;
+  const { clearSaveFeedback } = decomposition;
   const createdAtLabel = createdAt
     ? new Intl.DateTimeFormat("en", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(createdAt)
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(createdAt)
     : null;
 
   useEffect(() => {
@@ -157,27 +174,28 @@ export function TaskForm({
     fieldName: "title" | "description",
     nextValue: string,
   ) => {
-    if (!lastGeneratedDraftSignature) {
+    if (!lastGeneratedDraftSignature || currentDraftSignature !== lastGeneratedDraftSignature) {
       return;
     }
 
-    const nextDraftSignature = JSON.stringify({
-      title: fieldName === "title" ? nextValue.trim() : watchedTitle?.trim() ?? "",
-      description:
-        fieldName === "description" ? nextValue.trim() : watchedDescription?.trim() ?? "",
+    const currentDraft = getValues();
+    const nextDraftSignature = getTaskDraftSignature({
+      title: fieldName === "title" ? nextValue : currentDraft.title,
+      description: fieldName === "description" ? nextValue : currentDraft.description,
     });
 
-    if (lastGeneratedDraftSignature === nextDraftSignature) {
+    if (nextDraftSignature === lastGeneratedDraftSignature) {
       return;
     }
 
-    setLastGeneratedDraftSignature(null);
-    setHasGeneratedPreview(false);
-    setDecompositionNotice("Draft changed. Generate subtasks again to refresh the preview.");
-    resetDecomposition();
+    clearSaveFeedback();
   };
 
   const handleGenerateSubtasks = async () => {
+    if (decomposition.state.status === "loading") {
+      return;
+    }
+
     const isDraftValid = await trigger(["title", "description"]);
 
     if (!isDraftValid) {
@@ -185,18 +203,16 @@ export function TaskForm({
     }
 
     const draft = getValues();
+    const draftSignature = getTaskDraftSignature(draft);
 
-    setDecompositionNotice(null);
-    setLastGeneratedDraftSignature(JSON.stringify({
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-    }));
-    setHasGeneratedPreview(true);
-
-    await decomposition.generatePreview({
+    const previewResult = await decomposition.generatePreview({
       title: draft.title,
       description: draft.description,
     });
+
+    if (previewResult) {
+      setLastGeneratedDraftSignature(draftSignature);
+    }
   };
 
   const handleCreateSubtasks = async () => {
@@ -209,6 +225,10 @@ export function TaskForm({
     router.refresh();
   };
 
+  const handleGenerateEstimate = () => {
+    console.log("OK");
+  };
+
   const isGenerating = decomposition.state.status === "loading";
   const isSavingSubtasks = decomposition.state.saveStatus === "saving";
   const generationError = decomposition.state.status === "error"
@@ -216,10 +236,27 @@ export function TaskForm({
     : null;
   const previewResult =
     decomposition.state.status === "idle" ||
-    decomposition.state.status === "loading" ||
-    decomposition.state.status === "error"
+      decomposition.state.status === "loading" ||
+      decomposition.state.status === "error"
       ? null
       : decomposition.state.data;
+  const hasGeneratedPreview = Boolean(lastGeneratedDraftSignature && previewResult);
+  const isPreviewCurrent =
+    hasGeneratedPreview && currentDraftSignature === lastGeneratedDraftSignature;
+  const generateLabel = isGenerating
+    ? "Generating..."
+    : hasGeneratedPreview && !isPreviewCurrent
+      ? "Regenerate subtasks"
+      : "";
+  const decompositionNotice =
+    hasGeneratedPreview && !isPreviewCurrent
+      ? "Draft changed. Generate subtasks again to refresh the preview."
+      : null;
+  const canGenerate =
+    !isSubmitting &&
+    !isGenerating &&
+    !isSavingSubtasks &&
+    (!hasGeneratedPreview || !isPreviewCurrent);
 
   return (
     <form
@@ -364,8 +401,8 @@ export function TaskForm({
       </div>
 
       {createdAtLabel ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-xl border border-slate-800/80 bg-slate-950/30 px-4 py-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-600">
             Created
           </p>
           <p className="mt-1 text-sm text-slate-300">{createdAtLabel}</p>
@@ -373,18 +410,36 @@ export function TaskForm({
       ) : null}
 
       {showDecompositionSection ? (
-        <TaskDecompositionSection
-          taskId={taskId}
-          hasGeneratedPreview={hasGeneratedPreview}
-          notice={decompositionNotice}
-          result={previewResult}
-          isGenerating={isGenerating}
-          isSavingSubtasks={isSavingSubtasks}
-          generationError={generationError}
-          saveError={decomposition.state.saveError}
-          saveSuccessMessage={decomposition.state.saveSuccessMessage}
-          onCreateSubtasks={handleCreateSubtasks}
-        />
+        <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/45 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-200">
+              <Bot className="size-4" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-50">AI Tools</p>
+              <p className="text-sm leading-6 text-slate-400">
+                Plan faster with AI
+              </p>
+            </div>
+          </div>
+
+          <TaskDecompositionSection
+            taskId={taskId}
+            notice={decompositionNotice}
+            result={previewResult}
+            isGenerating={isGenerating}
+            isSavingSubtasks={isSavingSubtasks}
+            isPreviewCurrent={isPreviewCurrent}
+            canGenerate={canGenerate}
+            generateLabel={generateLabel}
+            generationError={generationError}
+            saveError={decomposition.state.saveError}
+            saveSuccessMessage={decomposition.state.saveSuccessMessage}
+            onGenerateSubtasks={handleGenerateSubtasks}
+            onCreateSubtasks={handleCreateSubtasks}
+          />
+          <TaskEstimationSection onGenerateEstimate={handleGenerateEstimate} />
+        </section>
       ) : null}
 
       <div className="flex items-center justify-between gap-3 border-t border-slate-800 pt-4">
@@ -392,17 +447,6 @@ export function TaskForm({
           {footerStart}
         </div>
         <div className="flex items-center gap-2">
-          {showDecompositionSection ? (
-            <Button
-              disabled={isSubmitting || isGenerating || isSavingSubtasks}
-              leadingIcon={<Sparkles className="size-4" />}
-              onClick={handleGenerateSubtasks}
-              type="button"
-              variant="secondary"
-            >
-              {isGenerating ? "Generating..." : "Generate subtasks"}
-            </Button>
-          ) : null}
           <Button onClick={onCancel} type="button" variant="ghost">
             {TASK_MODAL_MESSAGES.CANCEL}
           </Button>

@@ -129,13 +129,13 @@ export function TaskModal({
     >
       {!isCreateMode && modalTask ? (
         <div className="my-4 space-y-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-600">
             Task ID: {modalTask.id}
           </p>
 
           {modalTask.parentTask ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            <div className="rounded-xl border border-slate-800/80 bg-slate-950/30 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-600">
                 This task is a subtask
               </p>
               {(() => {
@@ -146,13 +146,13 @@ export function TaskModal({
                 }
 
                 return (
-              <button
-                className="mt-2 text-left text-sm font-medium text-blue-300 transition hover:text-blue-200 hover:underline"
-                onClick={() => handleOpenTask(parentTask.id)}
-                type="button"
-              >
-                Parent task: {parentTask.title}
-              </button>
+                  <button
+                    className="mt-2 cursor-pointer text-left text-sm font-medium text-blue-300 transition hover:text-blue-200 hover:underline"
+                    onClick={() => handleOpenTask(parentTask.id)}
+                    type="button"
+                  >
+                    Parent task: {parentTask.title}
+                  </button>
                 );
               })()}
             </div>

@@ -144,7 +144,7 @@ export function useTaskDecomposition(taskId: number | null) {
         const payload = (await response.json()) as unknown;
 
         if (activePreviewRequestIdRef.current !== requestId) {
-          return;
+          return false;
         }
 
         if (!response.ok) {
@@ -156,7 +156,7 @@ export function useTaskDecomposition(taskId: number | null) {
             saveError: null,
             saveSuccessMessage: null,
           });
-          return;
+          return false;
         }
 
         const data = decompositionPreviewResponseSchema.safeParse(
@@ -172,7 +172,7 @@ export function useTaskDecomposition(taskId: number | null) {
             saveError: null,
             saveSuccessMessage: null,
           });
-          return;
+          return false;
         }
 
         setState({
@@ -183,9 +183,10 @@ export function useTaskDecomposition(taskId: number | null) {
           saveError: null,
           saveSuccessMessage: null,
         });
+        return true;
       } catch {
         if (activePreviewRequestIdRef.current !== requestId) {
-          return;
+          return false;
         }
 
         setState({
@@ -196,6 +197,7 @@ export function useTaskDecomposition(taskId: number | null) {
           saveError: null,
           saveSuccessMessage: null,
         });
+        return false;
       }
     },
     [],

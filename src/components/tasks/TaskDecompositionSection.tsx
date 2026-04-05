@@ -1,6 +1,7 @@
 "use client";
 
-import { Bot, HelpCircle, Sparkles, Workflow } from "lucide-react";
+import { Blocks, HelpCircle, Sparkles, Workflow } from "lucide-react";
+import { AiActionRow } from "@/components/tasks/AiActionRow";
 import { Button } from "@/components/ui/Button";
 import type { DecompositionPreviewResult } from "@/lib/ai/features/task-decomposition/types";
 
@@ -13,14 +14,17 @@ type ReadyDecompositionPreview = Extract<
 
 type TaskDecompositionSectionProps = {
   taskId?: number;
-  hasGeneratedPreview: boolean;
   notice: string | null;
   result: DecompositionPreviewResult | null;
   isGenerating: boolean;
   isSavingSubtasks: boolean;
+  isPreviewCurrent: boolean;
+  canGenerate: boolean;
+  generateLabel: string;
   generationError: string | null;
   saveError: string | null;
   saveSuccessMessage: string | null;
+  onGenerateSubtasks: () => void;
   onCreateSubtasks: () => void;
 };
 
@@ -28,6 +32,7 @@ function ReadyPreview({
   taskId,
   preview,
   isSavingSubtasks,
+  isPreviewCurrent,
   saveError,
   saveSuccessMessage,
   onCreateSubtasks,
@@ -35,12 +40,14 @@ function ReadyPreview({
   taskId?: number;
   preview: ReadyDecompositionPreview;
   isSavingSubtasks: boolean;
+  isPreviewCurrent: boolean;
   saveError: string | null;
   saveSuccessMessage: string | null;
   onCreateSubtasks: () => void;
 }) {
   const hasSavedSubtasks = Boolean(saveSuccessMessage);
-  const canCreateSubtasks = Boolean(taskId) && !isSavingSubtasks && !hasSavedSubtasks;
+  const canCreateSubtasks =
+    Boolean(taskId) && isPreviewCurrent && !isSavingSubtasks && !hasSavedSubtasks;
 
   return (
     <div className="space-y-4">
@@ -110,106 +117,119 @@ function ReadyPreview({
 
 export function TaskDecompositionSection({
   taskId,
-  hasGeneratedPreview,
   notice,
   result,
   isGenerating,
   isSavingSubtasks,
+  isPreviewCurrent,
+  canGenerate,
+  generateLabel,
   generationError,
   saveError,
   saveSuccessMessage,
+  onGenerateSubtasks,
   onCreateSubtasks,
 }: TaskDecompositionSectionProps) {
+  const hasDetails =
+    Boolean(notice) ||
+    Boolean(result && isPreviewCurrent && !isGenerating && !generationError) ||
+    Boolean(generationError) ||
+    isGenerating ||
+    result?.status === "needs_clarification" ||
+    result?.status === "cannot_decompose" ||
+    result?.status === "ready";
+
   return (
-    <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/55 p-4">
-      <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-200">
-          <Bot className="size-4" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-slate-50">AI task decomposition</p>
-          <p className="text-sm leading-6 text-slate-400">
-            Generate a preview from the current draft, then decide whether to save subtasks.
-          </p>
-        </div>
-      </div>
+    <div className="rounded-xl border border-slate-800/80 bg-slate-950/30">
+      <AiActionRow
+        actionIcon={<Sparkles className="size-4" />}
+        actionLabel={generateLabel}
+        description="Break it into subtasks"
+        disabled={!canGenerate}
+        icon={<Blocks className="size-4" />}
+        onClick={onGenerateSubtasks}
+        title="AI Task decomposition"
+      />
 
-      {notice ? (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-          {notice}
-        </div>
-      ) : null}
-
-      {generationError ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-          {generationError}
-        </div>
-      ) : null}
-
-      {isGenerating ? (
-        <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="size-4 animate-spin rounded-full border-2 border-blue-200 border-t-transparent" />
-            <div>
-              <p className="text-sm font-medium text-slate-50">Generating preview</p>
-              <p className="text-sm text-slate-400">
-                Reviewing the current title and description draft.
-              </p>
+      {hasDetails ? (
+        <div className="space-y-4 border-t border-slate-800/80 px-4 py-4">
+          {notice ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+              {notice}
             </div>
-          </div>
-        </div>
-      ) : null}
+          ) : null}
 
-      {result?.status === "needs_clarification" ? (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-          <div className="flex items-start gap-3">
-            <HelpCircle className="mt-0.5 size-4 shrink-0 text-amber-200" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-50">Needs clarification</p>
-              <p className="text-sm leading-6 text-slate-300">{result.reason}</p>
-              <div className="space-y-1 pt-1">
-                {result.questions.map((question, index) => (
-                  <p key={`${question}:${index}`} className="text-sm leading-6 text-amber-100">
-                    {index + 1}. {question}
+          {result && isPreviewCurrent && !isGenerating && !generationError ? (
+            <p className="text-sm text-slate-400">Preview is up to date.</p>
+          ) : null}
+
+          {generationError ? (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+              {generationError}
+            </div>
+          ) : null}
+
+          {isGenerating ? (
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <div className="size-4 animate-spin rounded-full border-2 border-blue-200 border-t-transparent" />
+                <div>
+                  <p className="text-sm font-medium text-slate-50">Generating preview</p>
+                  <p className="text-sm text-slate-400">
+                    Reviewing the current title and description draft.
                   </p>
-                ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      ) : null}
+          ) : null}
 
-      {result?.status === "cannot_decompose" ? (
-        <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
-          <div className="flex items-start gap-3">
-            <Workflow className="mt-0.5 size-4 shrink-0 text-slate-300" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-50">Cannot decompose</p>
-              <p className="text-sm leading-6 text-slate-400">{result.reason}</p>
-              <p className="text-sm leading-6 text-slate-400">
-                This task is already small and specific enough to work on directly.
-              </p>
+          {result?.status === "needs_clarification" ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <HelpCircle className="mt-0.5 size-4 shrink-0 text-amber-200" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-50">Needs clarification</p>
+                  <p className="text-sm leading-6 text-slate-300">{result.reason}</p>
+                  <div className="space-y-1 pt-1">
+                    {result.questions.map((question, index) => (
+                      <p key={`${question}:${index}`} className="text-sm leading-6 text-amber-100">
+                        {index + 1}. {question}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {result?.status === "cannot_decompose" ? (
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+              <div className="flex items-start gap-3">
+                <Workflow className="mt-0.5 size-4 shrink-0 text-slate-300" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-50">Cannot decompose</p>
+                  <p className="text-sm leading-6 text-slate-400">{result.reason}</p>
+                  <p className="text-sm leading-6 text-slate-400">
+                    This task is already small and specific enough to work on directly.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {result?.status === "ready" ? (
+            <ReadyPreview
+              taskId={taskId}
+              preview={result}
+              isSavingSubtasks={isSavingSubtasks}
+              isPreviewCurrent={isPreviewCurrent}
+              saveError={saveError}
+              saveSuccessMessage={saveSuccessMessage}
+              onCreateSubtasks={onCreateSubtasks}
+            />
+          ) : null}
         </div>
       ) : null}
-
-      {result?.status === "ready" ? (
-        <ReadyPreview
-          taskId={taskId}
-          preview={result}
-          isSavingSubtasks={isSavingSubtasks}
-          saveError={saveError}
-          saveSuccessMessage={saveSuccessMessage}
-          onCreateSubtasks={onCreateSubtasks}
-        />
-      ) : null}
-
-      {hasGeneratedPreview && !isGenerating && !result && !generationError ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-400">
-          Generate subtasks to preview the current draft.
-        </div>
-      ) : null}
-    </section>
+    </div>
   );
 }
