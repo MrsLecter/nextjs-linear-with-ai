@@ -1,6 +1,7 @@
 import prisma from "@/lib/db/prisma";
 import { seedTaskPrioritizationTest } from './seeds/prioritization.seed'
 import { seedTaskDecompositionTest } from './seeds/decomposition.seed'
+import { seedHistoricalEstimationTasks } from "./seeds/estimation.seed";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -16,6 +17,10 @@ async function main() {
 
   if (args.includes('--decomposition')) {
     await seedTaskDecompositionTest(prisma)
+  }
+
+  if (args.includes("--estimation")) {
+    await seedHistoricalEstimationTasks(prisma)
   }
 
   if (args.includes('--clear')) {

@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../prisma/generated"
@@ -10,6 +5,23 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+model Task {
+  id           Int          @id @default(autoincrement())
+  title        String       @unique
+  description  String
+  status       TaskStatus   @default(TODO)
+  priority     TaskPriority @default(MEDIUM)
+  type         TaskWorkType @default(BUG)
+  estimation   Int          @default(0)
+  createdAt    DateTime     @default(now())
+  parentTaskId Int?
+  parentTask   Task?        @relation("TaskSubtasks", fields: [parentTaskId], references: [id])
+  subtasks     Task[]       @relation("TaskSubtasks")
+
+  @@index([parentTaskId])
+  @@map("tasks")
 }
 
 enum TaskStatus {
@@ -24,18 +36,11 @@ enum TaskPriority {
   HIGH
 }
 
-model Task {
-  id           Int          @id @default(autoincrement())
-  title        String       @unique
-  description  String
-  status       TaskStatus   @default(TODO)
-  priority     TaskPriority @default(MEDIUM)
-  estimation   Int          @default(0)
-  createdAt    DateTime     @default(now())
-  parentTaskId Int?
-  parentTask   Task?        @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: SetNull)
-  subtasks     Task[]       @relation("TaskSubtasks")
-
-  @@index([parentTaskId])
-  @@map("tasks")
+enum TaskWorkType {
+  FEATURE
+  BUG
+  IMPROVEMENT
+  TECH_DEBT
+  INTEGRATION
+  REFACTOR
 }
