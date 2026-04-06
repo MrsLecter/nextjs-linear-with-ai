@@ -13,7 +13,7 @@ export function PrioritizeButton({ onClick }: PrioritizeButtonProps) {
       onClick={onClick}
       variant="ghost"
     >
-      Suggest next task
+      AI Suggest next task
     </Button>
   );
 }

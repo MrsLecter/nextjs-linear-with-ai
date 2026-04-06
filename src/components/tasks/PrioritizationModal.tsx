@@ -369,7 +369,7 @@ export function PrioritizationModal({
       }
       onClose={onClose}
       open={open}
-      title="Suggest next task"
+      title="AI Suggest next task"
     >
       <div
         className={cx(
