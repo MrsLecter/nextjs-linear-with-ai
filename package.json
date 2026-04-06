@@ -9,6 +9,7 @@
     "lint": "eslint",
     "prisma:seed:priority": "npx prisma db seed -- --prioritization",
     "prisma:seed:decomposition": "npx prisma db seed -- --decomposition",
+    "prisma:seed:estimation": "npx prisma db seed -- --estimation",
     "prisma:seed:clear": "npx prisma db seed -- --clear",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
@@ -16,6 +17,7 @@
     "prisma:studio": "npx prisma studio"
   },
   "dependencies": {
+    "@pinecone-database/pinecone": "^7.1.0",
     "@prisma/adapter-better-sqlite3": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "dotenv": "^17.3.1",

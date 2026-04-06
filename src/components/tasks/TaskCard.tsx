@@ -3,6 +3,7 @@ import { TaskStatus } from "#prisma/browser";
 import { Button } from "@/components/ui/Button";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cx } from "@/lib/helpers";
+import { TASK_WORK_TYPE_LABELS } from "@/lib/constants/task-work-type.constants";
 import type { TaskWithParent } from "@/lib/types/task.types";
 import { getPriorityMeta, getStatusMeta } from "@/lib/utils/task.utils";
 
@@ -18,6 +19,7 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const StatusIcon = status.icon;
   const PriorityIcon = priority.icon;
   const estimation = task.estimation;
+  const taskTypeLabel = TASK_WORK_TYPE_LABELS[task.type];
   const createdAtLabel = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -49,9 +51,15 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-                Task ID: {task.id}
-                {task.parentTaskId ? " • Subtask" : ""}
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+                <span className="truncate">Task ID: {task.id}</span>
+                {task.parentTaskId ? <span>• Subtask</span> : null}
+                <Tooltip content={`Type: ${taskTypeLabel}`}>
+                  <span className="inline-flex items-center text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                    <span className="mr-2">●</span>
+                    {taskTypeLabel}
+                  </span>
+                </Tooltip>
               </div>
               <div className="truncate text-sm font-semibold text-slate-50">
                 {task.title}
@@ -86,9 +94,9 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
           </div>
         </div>
       </button>
-      <Tooltip content={`Delete ${task.title}`}>
+      <Tooltip content={`Delete task`}>
         <Button
-          aria-label={`Delete ${task.title}`}
+          aria-label={`Delete task`}
           className="shrink-0 opacity-55 transition-[opacity,background-color,border-color,color] duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
           onClick={() => onDelete(task)}
           size="icon"

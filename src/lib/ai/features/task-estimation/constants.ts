@@ -1,0 +1,3 @@
+export const TASK_ESTIMATION_MODEL = "gpt-5.4-mini";
+export const TASK_ESTIMATION_TIMEOUT_MS = 15_000;
+export const TASK_ESTIMATION_RETRIEVAL_TOP_K = 5;

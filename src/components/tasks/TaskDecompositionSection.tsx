@@ -32,7 +32,6 @@ function ReadyPreview({
   taskId,
   preview,
   isSavingSubtasks,
-  isPreviewCurrent,
   saveError,
   saveSuccessMessage,
   onCreateSubtasks,
@@ -40,14 +39,12 @@ function ReadyPreview({
   taskId?: number;
   preview: ReadyDecompositionPreview;
   isSavingSubtasks: boolean;
-  isPreviewCurrent: boolean;
   saveError: string | null;
   saveSuccessMessage: string | null;
   onCreateSubtasks: () => void;
 }) {
   const hasSavedSubtasks = Boolean(saveSuccessMessage);
-  const canCreateSubtasks =
-    Boolean(taskId) && isPreviewCurrent && !isSavingSubtasks && !hasSavedSubtasks;
+  const canCreateSubtasks = Boolean(taskId) && !isSavingSubtasks && !hasSavedSubtasks;
 
   return (
     <div className="space-y-4">
@@ -222,7 +219,6 @@ export function TaskDecompositionSection({
               taskId={taskId}
               preview={result}
               isSavingSubtasks={isSavingSubtasks}
-              isPreviewCurrent={isPreviewCurrent}
               saveError={saveError}
               saveSuccessMessage={saveSuccessMessage}
               onCreateSubtasks={onCreateSubtasks}

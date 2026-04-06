@@ -386,6 +386,14 @@ async function runAssessmentTool(
   );
 }
 
+export async function assessTaskDecompositionDraft(
+  input: AssessmentToolInput,
+): Promise<AssessmentToolOutput> {
+  const parsedInput = assessmentToolInputSchema.parse(input);
+
+  return runAssessmentTool(parsedInput);
+}
+
 async function runGenerateSubtasksTool(
   input: GenerateSubtasksToolInput,
 ): Promise<GenerateSubtasksToolOutput> {

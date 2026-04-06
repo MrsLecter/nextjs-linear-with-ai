@@ -4,14 +4,20 @@ import {
   TASK_DATE_SORT_DIRECTION_VALUES,
   TASK_ESTIMATION_VALUES,
 } from "@/lib/constants/task.constants";
+import { TASK_WORK_TYPE_VALUES } from "@/lib/constants/task-work-type.constants";
 
 export const taskStatusValues = Object.values(TaskStatus) as [TaskStatus, ...TaskStatus[]];
 export const taskPriorityValues = Object.values(TaskPriority) as [TaskPriority, ...TaskPriority[]];
+export const taskWorkTypeValues = [...TASK_WORK_TYPE_VALUES] as [
+  (typeof TASK_WORK_TYPE_VALUES)[number],
+  ...(typeof TASK_WORK_TYPE_VALUES)[number][],
+];
 export const taskEstimationValues = [...TASK_ESTIMATION_VALUES] as [
   (typeof TASK_ESTIMATION_VALUES)[number],
   ...(typeof TASK_ESTIMATION_VALUES)[number][],
 ];
 const taskDateSortDirectionSchema = z.enum(TASK_DATE_SORT_DIRECTION_VALUES);
+export const taskWorkTypeSchema = z.enum(taskWorkTypeValues);
 export const taskEstimationSchema = z.coerce
   .number()
   .refine(
@@ -28,6 +34,7 @@ export const createTaskSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(2000, "Description is too long"),
   status: z.enum(taskStatusValues).default(TaskStatus.TODO),
   priority: z.enum(taskPriorityValues).default(TaskPriority.MEDIUM),
+  type: taskWorkTypeSchema,
   estimation: taskEstimationSchema,
 });
 
@@ -36,6 +43,7 @@ export const taskFormSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(2000, "Description is too long"),
   status: z.enum(taskStatusValues).default(TaskStatus.TODO),
   priority: z.enum(taskPriorityValues).default(TaskPriority.MEDIUM),
+  type: taskWorkTypeSchema,
   estimation: taskEstimationSchema,
 });
 
@@ -44,6 +52,7 @@ export const updateTaskSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(2000, "Description is too long").optional(),
   status: z.enum(taskStatusValues).optional(),
   priority: z.enum(taskPriorityValues).optional(),
+  type: taskWorkTypeSchema.optional(),
   estimation: taskEstimationSchema.optional(),
 });
 

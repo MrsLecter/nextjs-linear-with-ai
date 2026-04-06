@@ -12,17 +12,21 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useTaskDecomposition } from "@/hooks/useTaskDecomposition";
+import { useTaskEstimation } from "@/hooks/useTaskEstimation";
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
   TASK_ESTIMATION_VALUES,
 } from "@/lib/constants/task.constants";
+import { TASK_WORK_TYPE_OPTIONS } from "@/lib/constants/task-work-type.constants";
 import {
   ERROR_MESSAGES,
   LOADING_STATES,
   TASK_MODAL_MESSAGES,
 } from "@/lib/constants/ui.constants";
 import { cx } from "@/lib/helpers";
+import { getTaskEstimationDraftSignature } from "@/lib/utils/task-estimation-draft.utils";
+import { getTaskEstimationViewState } from "@/lib/utils/task-estimation-view-state.utils";
 import type {
   TaskMutationResult,
   TaskMutationSuccess,
@@ -94,16 +98,6 @@ const taskFormResolver: Resolver<TaskFormInput> = async (values) => {
   };
 };
 
-function getTaskDraftSignature({
-  title,
-  description,
-}: Pick<TaskFormInput, "title" | "description">) {
-  return JSON.stringify({
-    title: title.trim(),
-    description: description.trim(),
-  });
-}
-
 export function TaskForm({
   taskId,
   createdAt,
@@ -133,12 +127,15 @@ export function TaskForm({
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [lastGeneratedDraftSignature, setLastGeneratedDraftSignature] = useState<string | null>(null);
+  const [lastEstimatedDraftSignature, setLastEstimatedDraftSignature] = useState<string | null>(null);
   const decomposition = useTaskDecomposition(taskId ?? null);
+  const estimation = useTaskEstimation();
 
   const titleError = errors.title?.message;
   const descriptionError = errors.description?.message;
   const statusError = errors.status?.message;
   const priorityError = errors.priority?.message;
+  const typeError = errors.type?.message;
   const estimationError = errors.estimation?.message;
   const watchedTitle = useWatch({
     control,
@@ -150,7 +147,7 @@ export function TaskForm({
   });
   const currentDraftSignature = useMemo(
     () =>
-      getTaskDraftSignature({
+      getTaskEstimationDraftSignature({
         title: watchedTitle ?? "",
         description: watchedDescription ?? "",
       }),
@@ -179,7 +176,7 @@ export function TaskForm({
     }
 
     const currentDraft = getValues();
-    const nextDraftSignature = getTaskDraftSignature({
+    const nextDraftSignature = getTaskEstimationDraftSignature({
       title: fieldName === "title" ? nextValue : currentDraft.title,
       description: fieldName === "description" ? nextValue : currentDraft.description,
     });
@@ -203,7 +200,7 @@ export function TaskForm({
     }
 
     const draft = getValues();
-    const draftSignature = getTaskDraftSignature(draft);
+    const draftSignature = getTaskEstimationDraftSignature(draft);
 
     const previewResult = await decomposition.generatePreview({
       title: draft.title,
@@ -225,8 +222,28 @@ export function TaskForm({
     router.refresh();
   };
 
-  const handleGenerateEstimate = () => {
-    console.log("OK");
+  const handleGenerateEstimate = async () => {
+    if (estimation.state.status === "loading") {
+      return;
+    }
+
+    const isDraftValid = await trigger(["title", "description"]);
+
+    if (!isDraftValid) {
+      return;
+    }
+
+    const draft = getValues();
+    const draftSignature = getTaskEstimationDraftSignature(draft);
+    const estimateResult = await estimation.estimateTask({
+      title: draft.title,
+      description: draft.description,
+      type: draft.type,
+    });
+
+    if (estimateResult) {
+      setLastEstimatedDraftSignature(draftSignature);
+    }
   };
 
   const isGenerating = decomposition.state.status === "loading";
@@ -257,6 +274,19 @@ export function TaskForm({
     !isGenerating &&
     !isSavingSubtasks &&
     (!hasGeneratedPreview || !isPreviewCurrent);
+  const estimationResult =
+    estimation.state.status === "success" ? estimation.state.data : null;
+  const {
+    generateLabel: estimationGenerateLabel,
+    notice: estimationNotice,
+    canGenerate: canGenerateEstimate,
+  } = getTaskEstimationViewState({
+    currentDraftSignature,
+    lastEstimatedDraftSignature,
+    hasEstimatedResult: Boolean(estimationResult),
+    estimationStatus: estimation.state.status,
+    isSubmitting,
+  });
 
   return (
     <form
@@ -342,7 +372,7 @@ export function TaskForm({
         />
       </FormField>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <FormField error={statusError} label="Status">
           <Select
             aria-invalid={statusError ? "true" : "false"}
@@ -398,6 +428,24 @@ export function TaskForm({
             ))}
           </Select>
         </FormField>
+
+        <FormField error={typeError} label="Type">
+          <Select
+            aria-invalid={typeError ? "true" : "false"}
+            className={cx(
+              typeError
+                ? "border-red-500 focus:border-red-500 focus:ring-red-500/25 hover:border-red-400"
+                : undefined,
+            )}
+            {...register("type")}
+          >
+            {TASK_WORK_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
       </div>
 
       {createdAtLabel ? (
@@ -438,7 +486,17 @@ export function TaskForm({
             onGenerateSubtasks={handleGenerateSubtasks}
             onCreateSubtasks={handleCreateSubtasks}
           />
-          <TaskEstimationSection onGenerateEstimate={handleGenerateEstimate} />
+          <TaskEstimationSection
+            result={estimationResult}
+            isEstimating={estimation.state.status === "loading"}
+            error={estimation.state.status === "error" ? estimation.state.error : null}
+            canGenerate={canGenerateEstimate}
+            generateLabel={estimationGenerateLabel}
+            notice={estimationNotice}
+            onGenerateEstimate={() => {
+              void handleGenerateEstimate();
+            }}
+          />
         </section>
       ) : null}
 
