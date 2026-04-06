@@ -136,7 +136,7 @@ Implementation entrypoints:
 
 ### 2. Task Decomposition
 
-When creating or editing a task, the app can:
+When editing an existing task, the app can:
 
 - assess whether the draft is ready for decomposition
 - ask for clarification if the draft is too vague
@@ -150,7 +150,7 @@ Implementation entrypoints:
 
 ### 3. Task Estimation
 
-The app can estimate task size on the fixed scale `0`, `1`, `2`, `3`, `5`, `8` by combining the current draft with retrieved historical tasks that look similar. Estimates can either return a grounded recommendation with confidence and similar-task references, or ask for clarification when the draft is still too vague.
+When editing an existing task, the app can estimate task size on the fixed scale `0`, `1`, `2`, `3`, `5`, `8` by combining the current draft with retrieved historical tasks that look similar. Estimates can either return a grounded recommendation with confidence and similar-task references, or ask for clarification when the draft is still too vague.
 
 Implementation entrypoints:
 
@@ -185,7 +185,7 @@ Implementation entrypoints:
 
 ### AI subtask generation
 
-1. Open a task modal.
+1. Open an existing task in the task modal.
 2. Enter a clear title and description.
 3. Generate a subtask preview.
 4. Review the AI output.
@@ -193,7 +193,7 @@ Implementation entrypoints:
 
 ### AI task estimation
 
-1. Open a task modal.
+1. Open an existing task in the task modal.
 2. Enter a clear title, description, and work type.
 3. Run AI estimation.
 4. Review either the estimate with confidence and similar tasks, or the clarification questions.
