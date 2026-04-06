@@ -109,7 +109,15 @@ export async function updateTaskAction(
   id: number,
   input: TaskFormInput,
 ): Promise<TaskMutationResult> {
+  const parsedId = taskIdParamSchema.safeParse({ id });
   const parsedInput = taskFormSchema.safeParse(input);
+
+  if (!parsedId.success) {
+    return {
+      success: false,
+      formError: parsedId.error.issues[0]?.message ?? ERROR_MESSAGES.UPDATE_TASK_FAILED,
+    };
+  }
 
   if (!parsedInput.success) {
     return {
@@ -119,7 +127,7 @@ export async function updateTaskAction(
   }
 
   try {
-    const task = await updateTask(id, parsedInput.data);
+    const task = await updateTask(parsedId.data.id, parsedInput.data);
 
     if (!task) {
       return {

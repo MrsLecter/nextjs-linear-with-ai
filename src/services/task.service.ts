@@ -7,7 +7,13 @@ import type {
   UpdateTaskInput,
   ListTasksInput,
 } from "@/lib/validation/task.schemas";
-import { deleteTaskSchema } from "@/lib/validation/task.schemas";
+import {
+  createTaskSchema,
+  deleteTaskSchema,
+  listTasksSchema,
+  taskIdParamSchema,
+  updateTaskSchema,
+} from "@/lib/validation/task.schemas";
 
 const taskWithParentInclude = {
   parentTask: {
@@ -27,19 +33,20 @@ export type CreateSubtaskRecordInput = {
 export async function listTasks(
   options: ListTasksInput
 ): Promise<TaskWithParent[]> {
+  const parsedOptions = listTasksSchema.parse(options);
   const tasks = await prisma.task.findMany({
     include: taskWithParentInclude,
     where: {
-      ...(options.status ? { status: options.status } : {}),
+      ...(parsedOptions.status ? { status: parsedOptions.status } : {}),
     },
-    orderBy: { createdAt: options.dateSort ?? "desc" },
+    orderBy: { createdAt: parsedOptions.dateSort ?? "desc" },
   });
 
-  if (options.prioritySort) {
+  if (parsedOptions.prioritySort) {
     return sortTasks(
       tasks,
-      options.prioritySort,
-      options.dateSort ?? "desc",
+      parsedOptions.prioritySort,
+      parsedOptions.dateSort ?? "desc",
     );
   }
 
@@ -47,24 +54,30 @@ export async function listTasks(
 }
 
 export async function getTaskById(id: Task["id"]): Promise<TaskWithParent | null> {
+  const parsedId = taskIdParamSchema.parse({ id });
+
   return prisma.task.findUnique({
     include: taskWithParentInclude,
-    where: { id },
+    where: { id: parsedId.id },
   });
 }
 
 export async function getSubtasksByParentTaskId(
   parentTaskId: Task["id"],
 ): Promise<Task[]> {
+  const parsedParentTaskId = taskIdParamSchema.parse({ id: parentTaskId });
+
   return prisma.task.findMany({
-    where: { parentTaskId },
+    where: { parentTaskId: parsedParentTaskId.id },
     orderBy: { createdAt: "asc" },
   });
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
+  const parsedInput = createTaskSchema.parse(input);
+
   return prisma.task.create({
-    data: input,
+    data: parsedInput,
   });
 }
 
@@ -94,19 +107,21 @@ export async function updateTask(
   id: Task["id"],
   input: UpdateTaskInput,
 ): Promise<Task | null> {
-  const existingTask = await getTaskById(id);
+  const parsedId = taskIdParamSchema.parse({ id });
+  const parsedInput = updateTaskSchema.parse(input);
+  const existingTask = await getTaskById(parsedId.id);
 
   if (!existingTask) {
     return null;
   }
 
-  if (Object.keys(input).length === 0) {
+  if (Object.keys(parsedInput).length === 0) {
     return existingTask;
   }
 
   return prisma.task.update({
-    where: { id },
-    data: input,
+    where: { id: parsedId.id },
+    data: parsedInput,
   });
 }
 
