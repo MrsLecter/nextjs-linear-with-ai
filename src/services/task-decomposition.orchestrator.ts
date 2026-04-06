@@ -6,7 +6,7 @@ import type {
   ResponseInputItem,
   ToolChoiceFunction,
 } from "openai/resources/responses/responses";
-import { clientOpenAI } from "@/lib/ai/openai";
+import { clientOpenAI, OPENAI_MAX_OUTPUT_TOKENS } from "@/lib/ai/openai";
 import {
   TASK_DECOMPOSITION_AGENT_SYSTEM_PROMPT,
   TASK_DECOMPOSITION_ASSESSMENT_SYSTEM_PROMPT,
@@ -288,7 +288,7 @@ async function createAgentResponse(params: {
     tools: [...taskDecompositionTools],
     tool_choice: params.toolChoice,
     parallel_tool_calls: false,
-    max_output_tokens: 500,
+    max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
     stream: false,
   };
 
@@ -346,7 +346,7 @@ async function runAssessmentTool(
       model: TASK_DECOMPOSITION_MODEL,
       instructions: TASK_DECOMPOSITION_ASSESSMENT_SYSTEM_PROMPT,
       input: buildAssessmentPrompt(input),
-      max_output_tokens: 400,
+      max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
       text: {
         format: {
           type: "json_schema",
@@ -402,7 +402,7 @@ async function runGenerateSubtasksTool(
       model: TASK_DECOMPOSITION_MODEL,
       instructions: TASK_DECOMPOSITION_GENERATION_SYSTEM_PROMPT,
       input: buildSubtaskGenerationPrompt(input),
-      max_output_tokens: 900,
+      max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
       text: {
         format: {
           type: "json_schema",

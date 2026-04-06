@@ -6,6 +6,7 @@ import {
   buildTaskEstimationPrompt,
   TASK_ESTIMATION_SYSTEM_PROMPT,
 } from "@/lib/ai/features/task-estimation/prompts";
+import { OPENAI_MAX_OUTPUT_TOKENS } from "@/lib/ai/openai";
 import type {
   EstimateTaskRequest,
   EstimateTaskClarificationResult,
@@ -136,7 +137,7 @@ async function callTaskEstimationModel(params: {
         model: TASK_ESTIMATION_MODEL,
         instructions: TASK_ESTIMATION_SYSTEM_PROMPT,
         input: prompt,
-        max_output_tokens: 500,
+        max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
         text: {
           format: {
             type: "json_schema",

@@ -2,6 +2,8 @@ import "server-only";
 import OpenAI from "openai";
 import { env } from "@/lib/env";
 
+export const OPENAI_MAX_OUTPUT_TOKENS = 400;
+
 const globalForOpenAI = globalThis as typeof globalThis & {
   openai?: OpenAI;
 };

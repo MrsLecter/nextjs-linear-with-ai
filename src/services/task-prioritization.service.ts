@@ -1,7 +1,7 @@
 import type { Task } from "#prisma/client";
 import { TaskStatus } from "#prisma/browser";
 import { z } from "zod";
-import { clientOpenAI } from "@/lib/ai/openai";
+import { clientOpenAI, OPENAI_MAX_OUTPUT_TOKENS } from "@/lib/ai/openai";
 import { calculateTaskScore } from "@/lib/ai/features/task-prioritization/utils";
 import {
   getPrioritizationTasksSignature,
@@ -330,6 +330,7 @@ async function callPrioritizationModel(
       model: PRIORITIZATION_MODEL,
       instructions: PRIORITIZATION_SYSTEM_PROMPT,
       input: prompt,
+      max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
     }),
     PRIORITIZATION_TIMEOUT_MS,
   );
