@@ -84,11 +84,20 @@ export function useTaskEstimation() {
         return null;
       }
 
-      if (!parsedResponse.data.success || !response.ok) {
+      if (!parsedResponse.data.success) {
         setState({
           status: "error",
           data: null,
           error: parsedResponse.data.error,
+        });
+        return null;
+      }
+
+      if (!response.ok) {
+        setState({
+          status: "error",
+          data: null,
+          error: DEFAULT_ESTIMATION_ERROR_MESSAGE,
         });
         return null;
       }

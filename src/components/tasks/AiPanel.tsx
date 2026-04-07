@@ -3,9 +3,9 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Bot } from "lucide-react";
-import type { Task } from "#prisma/browser";
 import { Card } from "@/components/ui/Card";
 import { PrioritizeButton } from "@/components/tasks/PrioritizeButton";
+import type { TaskWithParent } from "@/lib/types/task.types";
 
 const PrioritizationModal = dynamic(() =>
   import("@/components/tasks/PrioritizationModal").then(
@@ -14,14 +14,14 @@ const PrioritizationModal = dynamic(() =>
 );
 
 type AiPanelProps = {
-  tasks: Task[];
-  onOpenTask: (task: Task) => void;
+  tasks: TaskWithParent[];
+  onOpenTask: (task: TaskWithParent) => void;
 };
 
 export function AiPanel({ tasks, onOpenTask }: AiPanelProps) {
   const [isPrioritizationOpen, setIsPrioritizationOpen] = useState(false);
 
-  const handleOpenTaskFromPrioritization = (task: Task) => {
+  const handleOpenTaskFromPrioritization = (task: TaskWithParent) => {
     onOpenTask(task);
   };
 

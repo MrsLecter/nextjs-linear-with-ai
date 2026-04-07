@@ -3,6 +3,7 @@ import { TaskStatus } from "#prisma/browser";
 import { z } from "zod";
 import { clientOpenAI, OPENAI_MAX_OUTPUT_TOKENS } from "@/lib/ai/openai";
 import { calculateTaskScore } from "@/lib/ai/features/task-prioritization/utils";
+import type { TaskWithParent } from "@/lib/types/task.types";
 import {
   getPrioritizationTasksSignature,
   PRIORITIZATION_SERVER_CACHE_TTL_MS,
@@ -43,7 +44,7 @@ const prioritizationResponseSchema = z
   })
   .strict();
 
-export type ScoredTask = Task & {
+export type ScoredTask = TaskWithParent & {
   baselineScore: number;
 };
 

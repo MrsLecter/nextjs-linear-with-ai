@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Task } from "#prisma/browser";
+import type { TaskWithParent } from "@/lib/types/task.types";
 import {
   getPrioritizationTasksSignature,
   PRIORITIZATION_CLIENT_CACHE_TTL_MS,
@@ -174,7 +174,7 @@ export function usePrioritization() {
     setIsLoading(false);
   }, []);
 
-  const runPrioritization = useCallback(async (tasks: Task[]) => {
+  const runPrioritization = useCallback(async (tasks: TaskWithParent[]) => {
     const tasksSignature = getPrioritizationTasksSignature(tasks);
     const cachedEntry = prioritizationClientCache.get(tasksSignature);
     const now = Date.now();

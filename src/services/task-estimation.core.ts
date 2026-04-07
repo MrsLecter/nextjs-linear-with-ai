@@ -245,7 +245,7 @@ function toEstimationClarificationResult(
     status: "needs_clarification",
     reason: assessment.reason,
     questions: assessment.questions,
-  });
+  }) as EstimateTaskClarificationResult;
 }
 
 export function createTaskEstimator(

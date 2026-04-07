@@ -24,7 +24,7 @@ export type EstimateTaskReadyResult = {
 export type EstimateTaskClarificationResult = {
   status: "needs_clarification";
   reason: string;
-  questions: [string, ...string[]];
+  questions: string[];
 };
 
 export type EstimateTaskResult =

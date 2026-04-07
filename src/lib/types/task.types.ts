@@ -8,8 +8,8 @@ export type ParentTaskSummary = {
   title: Task["title"];
 };
 
-export type TaskWithParent = Task & {
-  estimation?: TaskEstimationValue | null;
+export type TaskWithParent = Omit<Task, "estimation"> & {
+  estimation: Task["estimation"];
   parentTask?: ParentTaskSummary | null;
 };
 

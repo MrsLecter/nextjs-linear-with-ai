@@ -8,7 +8,6 @@ import {
   CornerDownRight,
   Sparkles,
 } from "lucide-react";
-import type { Task } from "#prisma/browser";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import {
@@ -16,13 +15,14 @@ import {
   type PrioritizationData,
 } from "@/hooks/usePrioritization";
 import { cx } from "@/lib/helpers";
+import type { TaskWithParent } from "@/lib/types/task.types";
 import { getPrioritizationTasksSignature } from "@/lib/utils/prioritization-cache";
 
 type PrioritizationModalProps = {
   open: boolean;
-  tasks: Task[];
+  tasks: TaskWithParent[];
   onClose: () => void;
-  onOpenTask?: (task: Task) => void;
+  onOpenTask?: (task: TaskWithParent) => void;
 };
 
 function LoadingState() {
@@ -95,8 +95,8 @@ function SuccessState({
   onOpenTask,
 }: {
   data: Exclude<PrioritizationData, null>;
-  tasks: Task[];
-  onOpenTask?: (task: Task) => void;
+  tasks: TaskWithParent[];
+  onOpenTask?: (task: TaskWithParent) => void;
 }) {
   const tasksById = new Map(tasks.map((task) => [String(task.id), task]));
   const primaryTask = tasksById.get(data.primaryTaskId) ?? null;
@@ -115,7 +115,7 @@ function SuccessState({
 
   const getTaskLabel = (
     taskId: string,
-    task: Task | null,
+    task: TaskWithParent | null,
     fallbackTitle?: string,
   ) => {
     const title = task?.title?.trim() || fallbackTitle?.trim();
@@ -338,7 +338,7 @@ export function PrioritizationModal({
     void runPrioritization(tasks);
   };
 
-  const handleOpenTask = (task: Task) => {
+  const handleOpenTask = (task: TaskWithParent) => {
     onOpenTask?.(task);
   };
 

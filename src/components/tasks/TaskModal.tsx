@@ -10,7 +10,10 @@ import {
   CONFIRMATION_MESSAGES,
   TASK_MODAL_MESSAGES,
 } from "@/lib/constants/ui.constants";
-import { EMPTY_TASK_VALUES } from "@/lib/constants/task.constants";
+import {
+  EMPTY_TASK_VALUES,
+  TASK_ESTIMATION_VALUES,
+} from "@/lib/constants/task.constants";
 import type { TaskMutationResult } from "@/lib/types/task-mutation.types";
 import type { TaskWithParent } from "@/lib/types/task.types";
 import type { TaskFormInput } from "@/lib/validation/task.schemas";
@@ -40,6 +43,14 @@ export function TaskModal({
   const [isUnsavedChangesModalOpen, setIsUnsavedChangesModalOpen] = useState(false);
   const [pendingTaskToOpen, setPendingTaskToOpen] = useState<number | null>(null);
 
+  const getInitialEstimationValue = (estimation: number) => (
+    TASK_ESTIMATION_VALUES.includes(
+      estimation as (typeof TASK_ESTIMATION_VALUES)[number],
+    )
+      ? (estimation as TaskFormInput["estimation"])
+      : EMPTY_TASK_VALUES.estimation
+  );
+
   const initialValues = useMemo<TaskFormInput>(() => {
     if (!modalTask) {
       return EMPTY_TASK_VALUES;
@@ -51,7 +62,7 @@ export function TaskModal({
       status: modalTask.status,
       priority: modalTask.priority,
       type: modalTask.type,
-      estimation: modalTask.estimation ?? 0,
+      estimation: getInitialEstimationValue(modalTask.estimation),
     };
   }, [modalTask]);
 
